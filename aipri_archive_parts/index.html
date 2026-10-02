@@ -1,0 +1,45 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>아이프리 아카이브</title><link rel="stylesheet" href="../style.css"></head><body>
+<header class="topbar">
+<a class="brand" href="#" onclick="goHome();return false" aria-label="아이프리 아카이브 홈">
+<img class="brandLogo" src="https://cdnaipriimg01.blob.core.windows.net/aipri/mypage/assets/common/images/ic_aipri_v2.svg" alt="아이프리 로고">
+<span><b>AIPRI</b><small>ARCHIVE</small></span></a>
+<nav><button id="partsNav" onclick="setSection('parts')">MY CHARACTER PARTS</button><button id="songsNav" onclick="setSection('songs')">SONGS</button></nav><button class="mobileFilter" onclick="toggleFilters()">필터</button></header>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<main>
+<section id="home" class="home"><div><p class="eyebrow">MY AIPRI COLLECTION</p><h1>아이프리<br><em>아카이브</em></h1><p>마이캐릭터 파츠와 악곡을 한곳에서 정리하고 찾아볼 수 있어요.</p></div>
+<div class="choices"><button class="choice partsChoice" onclick="setSection('parts')"><i>✦</i><small>MY CHARACTER</small><strong>마이캐릭터 파츠</strong><span>얼굴 · 헤어 · 컬러 · 메이크업 · 데코</span><b>→</b></button>
+<button class="choice songsChoice" onclick="setSection('songs')"><i>♫</i><small>MUSIC</small><strong>악곡</strong><span>1인곡 · 2인곡 · 3인곡 · 4인곡</span><b>→</b></button></div></section>
+
+<section id="archive" class="hidden"><div class="hero"><div><p class="eyebrow" id="heroEyebrow"></p><h1 id="heroTitle"></h1><p id="heroText"></p></div><div class="count"><b id="count">0</b><small>ITEMS</small></div></div>
+<div class="layout"><aside id="filters"><div class="filterHead"><b>FILTER</b><button onclick="resetFilters()">초기화</button></div>
+<label class="search">⌕<input id="search" placeholder="이름이나 태그 검색"></label>
+<div id="partFilters">
+<div class="filterSectionHead" id="partCategoryToggle" role="button" tabindex="0" aria-expanded="true" onclick="togglePartCategories()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePartCategories()}"><p>PART CATEGORY</p><span id="categoryArrow">⌃</span></div>
+<div id="partCats"></div>
+</div>
+<div id="songFilters" class="hidden"><p>SONG CATEGORY</p><button class="chip songCat active" data-cat="전체">전체</button><button class="chip songCat" data-cat="1인곡">1인곡</button><button class="chip songCat" data-cat="2인곡">2인곡</button><button class="chip songCat" data-cat="3인곡">3인곡</button><button class="chip songCat" data-cat="4인곡">4인곡</button></div></aside>
+<section class="content"><div class="toolbar"><span id="result"></span><select id="sort"><option value="default">기본순</option><option value="name">이름순</option><option value="category">카테고리순</option></select></div>
+<div id="partStatusFilters" class="statusFilters hidden" aria-label="파츠 상태 필터">
+<button class="statusFilter active" data-status="all">전체</button>
+<button class="statusFilter" data-status="owned">보유</button>
+<button class="statusFilter" data-status="unowned">미보유</button>
+<button class="statusFilter" data-status="krReleased">한국 실장</button>
+<button class="statusFilter" data-status="krUnreleased">한국 미실장</button>
+</div>
+<h2 id="sectionHeading"></h2><div id="grid" class="grid"></div><div id="empty" class="empty hidden">✦<h3>찾는 자료가 없어요</h3><p>검색어나 필터를 바꿔보세요.</p></div></section></div></section>
+</main>
+
+<footer>
+<div class="footerNotice">아이프리 파츠와 악곡을 정리한 비영리/비공식 매체입니다.<br>이 매체는 공식 서비스와 무관하며 아이프리 관련 이미지들의 권리는 각 티아츠 코리아, 신 소피아 등에게 있습니다.<br>공식 서비스와 무관함을 말씀드립니다.</div>
+<div class="footerLinks">
+<div class="sourceRow"><span>한국 파츠/악곡 이미지:</span><a href="https://aipri.co.kr/kr/about/character.php" target="_blank" rel="noopener">https://aipri.co.kr/kr/about/character.php</a></div>
+<div class="sourceRow"><span>일본 파츠/악곡 이미지:</span><a href="https://aipri.jp/verse/parts/index2.html" target="_blank" rel="noopener">https://aipri.jp/verse/parts/index2.html</a></div>
+<div class="sourceRow"><span></span><a href="https://aipri.jp/verse/parts/" target="_blank" rel="noopener">https://aipri.jp/verse/parts/</a></div>
+</div></footer>
+
+<div id="modal" class="modal hidden" onclick="closeModal()"><div class="modalCard" onclick="event.stopPropagation()"><button onclick="closeModal()">×</button><div id="modalGallery" class="modalGallery"></div><div class="modalInfo"><small id="modalCat"></small><h2 id="modalTitle"></h2><p id="modalDesc"></p><div id="modalStatus"></div><div id="modalTags"></div><div id="modalActions"></div></div></div></div>
+<script src="../script.js"></script></body></html>
