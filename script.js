@@ -182,6 +182,22 @@ function loadSheetGviz(name){
   script.src=`https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?${params.toString()}`;document.head.appendChild(script);
  });
 }
+function normalizeCategory(value){
+ const v=String(value??"").trim();
+ const map={
+   "헤어컬러":"헤어 컬러",
+   "헤어 컬러":"헤어 컬러",
+   "매쉬컬러":"매쉬 컬러",
+   "메쉬컬러":"매쉬 컬러",
+   "매쉬 컬러":"매쉬 컬러",
+   "메쉬 컬러":"매쉬 컬러"
+ };
+ return map[v]||v;
+}
+function parseKoreaReleased(value){
+ const v=String(value??"").trim().toLowerCase();
+ return ["true","1","yes","y","실장","한국 실장"].includes(v);
+}
 function convertSheetRows(name,rows){
   if(!rows.length)return [];
   rows=rows.map(v=>Array.isArray(v)?v:[]);
@@ -190,23 +206,31 @@ function convertSheetRows(name,rows){
   // A열(ID)이 비어 있는 행은 어떤 내용이 남아 있어도 사이트에 표시하지 않습니다.
   rows=rows.filter(v=>validId(v[0]));
   if(name===CONFIG.songsSheetName){
-    return rows.map(v=>({id:String(v[0]??"").trim(),category:String(v[1]??"").trim(),name:String(v[2]??"").trim(),image:parseImageValue(v[3]),description:String(v[4]??"").trim(),tags:cleanTags(v[5])}));
-  }
-  return rows.map(v=>{
-    const tags=cleanTags(v[6]);
-    return {
+    return rows.map(v=>({
       id:String(v[0]??"").trim(),
-      category:normalizeCategory(v[1]),
+      category:String(v[1]??"").trim(),
       name:String(v[2]??"").trim(),
       image:parseImageValue(v[3]),
-      krImage:parseImageValue(v[3]),
-      jpImage:parseImageValue(v[4]),
-      description:String(v[5]??"").trim(),
-      tags:tags.filter(t=>t!=="한국 실장"&&t!=="한국 미실장"),
-      owned:false,
-      krReleased:parseKoreaReleased(v[8],tags)
-    };
-  });
+      description:String(v[4]??"").trim(),
+      tags:cleanTags(v[5])
+    }));
+  }
+  // 파츠 시트의 실제 구조:
+  // A ID / B 카테고리 / C 이름 / D 한국 이미지 / E 일본 이미지 / F 보유 / G 한국 실장
+  return rows.map(v=>({
+    id:String(v[0]??"").trim(),
+    category:normalizeCategory(v[1]),
+    name:String(v[2]??"").trim(),
+    image:parseImageValue(v[3]),
+    krImage:parseImageValue(v[3]),
+    jpImage:parseImageValue(v[4]),
+    description:"",
+    tags:[],
+    // F열 보유를 기본 보유 상태로 사용합니다.
+    owned:parseBool(v[5],false),
+    // G열 한국 실장을 한국 실장/미실장 필터의 기준으로 사용합니다.
+    krReleased:parseKoreaReleased(v[6])
+  }));
 }
 
 let saveTimer=null;
