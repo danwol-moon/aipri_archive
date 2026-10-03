@@ -218,3 +218,99 @@ function refreshAipriPartCache() {
   CacheService.getScriptCache().remove(AIPRI_CONFIG.CACHE_KEY);
   getPartMetadata_();
 }
+
+
+// ============================================================
+// 개인 CODE 기능 (웹 앱)
+// 필요한 시트: 사용자 / 보유데이터
+// 사용자: A 개인코드 | B 이름 | C 사용 여부
+// 보유데이터: A 개인코드 | B 파츠 ID | C 보유
+// ============================================================
+const USER_SHEET_NAME = '사용자';
+const OWNERSHIP_SHEET_NAME = '보유데이터';
+
+function doGet(e) {
+  const p = e && e.parameter ? e.parameter : {};
+  if (p.action !== 'load') return jsonp_({ok:true, message:'AIPRI archive API is running.'}, p.callback);
+  const code = String(p.code || '').trim();
+  const user = findUser_(code);
+  if (!user) return jsonp_({ok:false, message:'등록되지 않은 개인 코드입니다.'}, p.callback);
+  if (!user.enabled) return jsonp_({ok:false, message:'사용이 중지된 개인 코드입니다.'}, p.callback);
+  const owned = readOwnership_(code);
+  return jsonp_({ok:true, name:user.name, owned}, p.callback);
+}
+
+function doPost(e) {
+  const p = e && e.parameter ? e.parameter : {};
+  if (p.action !== 'save') return ContentService.createTextOutput(JSON.stringify({ok:false,message:'Unknown action'})).setMimeType(ContentService.MimeType.JSON);
+  const code = String(p.code || '').trim();
+  const partId = String(p.partId || '').trim();
+  const owned = String(p.owned || '').toLowerCase() === 'true';
+  const user = findUser_(code);
+  if (!user || !user.enabled || !partId) return ContentService.createTextOutput(JSON.stringify({ok:false,message:'Invalid request'})).setMimeType(ContentService.MimeType.JSON);
+  writeOwnership_(code, partId, owned);
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function findUser_(code) {
+  if (!code) return null;
+  const sh = SpreadsheetApp.getActive().getSheetByName(USER_SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return null;
+  const rows = sh.getRange(2,1,sh.getLastRow()-1,3).getValues();
+  for (const r of rows) {
+    if (String(r[0] || '').trim() === code) {
+      const enabled = String(r[2]).toLowerCase() === 'true' || r[2] === true || String(r[2]).trim() === '사용';
+      return {name:String(r[1] || '').trim(), enabled};
+    }
+  }
+  return null;
+}
+
+function readOwnership_(code) {
+  const sh = SpreadsheetApp.getActive().getSheetByName(OWNERSHIP_SHEET_NAME);
+  const out = {};
+  if (!sh || sh.getLastRow() < 2) return out;
+  const rows = sh.getRange(2,1,sh.getLastRow()-1,3).getValues();
+  rows.forEach(r => {
+    if (String(r[0] || '').trim() === code && (r[2] === true || String(r[2]).toLowerCase() === 'true')) out[String(r[1] || '').trim()] = true;
+  });
+  return out;
+}
+
+function writeOwnership_(code, partId, owned) {
+  const sh = SpreadsheetApp.getActive().getSheetByName(OWNERSHIP_SHEET_NAME);
+  if (!sh) throw new Error('보유데이터 시트가 없습니다.');
+  const last = sh.getLastRow();
+  if (last >= 2) {
+    const rows = sh.getRange(2,1,last-1,3).getValues();
+    for (let i=0;i<rows.length;i++) {
+      if (String(rows[i][0] || '').trim() === code && String(rows[i][1] || '').trim() === partId) {
+        sh.getRange(i+2,3).setValue(owned);
+        return;
+      }
+    }
+  }
+  sh.appendRow([code, partId, owned]);
+}
+
+function jsonp_(obj, callback) {
+  const safe = String(callback || '').replace(/[^A-Za-z0-9_$]/g, '');
+  if (!safe) return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(safe + '(' + JSON.stringify(obj) + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+/**
+ * 처음 한 번만 실행하면 CODE 기능용 두 시트를 만들고 헤더만 준비합니다.
+ * 개인 코드/이름은 예시값 없이 비워 두며, 필요할 때 직접 추가합니다.
+ */
+function setupAipriUserSheets() {
+  const ss = SpreadsheetApp.getActive();
+  let users = ss.getSheetByName(USER_SHEET_NAME);
+  if (!users) users = ss.insertSheet(USER_SHEET_NAME);
+  if (users.getLastRow() === 0) users.appendRow(['개인코드','이름','사용 여부']);
+  // 개인 코드는 예시값을 넣지 않고 비워 둡니다.
+  // 사용자를 추가할 때 A열 개인코드, B열 이름, C열 사용 여부를 직접 입력하세요.
+  let own = ss.getSheetByName(OWNERSHIP_SHEET_NAME);
+  if (!own) own = ss.insertSheet(OWNERSHIP_SHEET_NAME);
+  if (own.getLastRow() === 0) own.appendRow(['개인코드','파츠 ID','보유']);
+}
