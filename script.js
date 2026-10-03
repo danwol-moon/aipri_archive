@@ -16,6 +16,7 @@ const DATA={parts:CATS.map((category,i)=>({id:"P"+String(i+1).padStart(3,"0"),ca
 const OWNED_KEY="aipri_archive_guest_owned_v3";
 let ownedMap={};
 let activeCode="";
+let activeUserName="";
 let codeMode=false;
 let quickSelect=false;
 const s={section:"parts",cat:"전체",status:"all",search:"",sort:"default",categoriesOpen:true,data:{parts:[],songs:[]}};
@@ -35,6 +36,17 @@ document.getElementById("search").oninput=e=>{s.search=e.target.value.toLowerCas
 document.getElementById("sort").onchange=e=>{s.sort=e.target.value;render()};
 
 function act(sel,x){document.querySelectorAll(sel).forEach(b=>b.classList.toggle("active",b===x))}
+function routeSection(){
+  const h=String(location.hash||"").replace(/^#/,"").trim().toLowerCase();
+  if(h==="parts"||h==="songs") return h;
+  return null;
+}
+function navigateRoute(route){
+  const next=route==="parts"||route==="songs"?route:"";
+  const hash=next?`#${next}`:"";
+  if(location.hash!==hash){ history.pushState({section:next||"home"},"",location.pathname+location.search+hash); }
+}
+
 function goHome(){navigateRoute("home");document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
 function setSection(x){navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";document.getElementById("search").value="";document.getElementById("home").classList.add("hidden");document.getElementById("archive").classList.remove("hidden");document.getElementById("partFilters").classList.toggle("hidden",x!=="parts");document.getElementById("songFilters").classList.toggle("hidden",x!=="songs");document.getElementById("partStatusFilters").classList.toggle("hidden",x!=="parts");document.getElementById("partsNav").classList.toggle("active",x==="parts");document.getElementById("songsNav").classList.toggle("active",x==="songs");act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));document.getElementById("heroEyebrow").textContent=x==="parts"?"MY CHARACTER":"MUSIC";document.getElementById("heroTitle").textContent=x==="parts"?"마이캐릭터 파츠":"악곡";document.getElementById("heroText").textContent=x==="parts"?"파츠의 이미지와 이름, 보유 여부를 확인할 수 있어요.":"1인곡부터 4인곡까지 이미지와 제목을 확인할 수 있어요.";document.getElementById("filters").classList.remove("open");render()}
 function toggleFilters(){document.getElementById("filters").classList.toggle("open")}
@@ -188,7 +200,7 @@ let saveTimer=null;
 function openCodeModal(){
  const modal=document.getElementById("codeModal"); if(!modal)return;
  document.getElementById("codeInput").value=activeCode;
- document.getElementById("codeState").textContent=activeCode?`현재 코드: ${activeCode}`:"";
+ document.getElementById("codeState").textContent=activeCode?(activeUserName?`${activeUserName}님으로 연결됨`:`현재 코드: ${activeCode}`):"";
  modal.classList.remove("hidden"); setTimeout(()=>document.getElementById("codeInput").focus(),50);
 }
 function closeCodeModal(){document.getElementById("codeModal").classList.add("hidden")}
@@ -219,7 +231,10 @@ function submitCode(){
  if(!apiReady()){codeState("아직 서버 주소가 연결되지 않았어요. Apps Script 웹 앱 URL을 설정한 뒤 사용할 수 있습니다.",true);return}
  codeState("코드를 확인하고 보유 데이터를 불러오는 중…");
  loadUserOwnership(code).then(data=>{
-   activeCode=code;codeMode=true;applyOwnershipMap(data.owned||{});closeCodeModal();showToast(`${data.name?data.name+" · ":""}개인 보유 데이터가 불러와졌습니다.`);render();
+   activeCode=code;activeUserName=String(data.name||"").trim();codeMode=true;applyOwnershipMap(data.owned||{});
+   const btn=document.getElementById("codeButton");
+   if(btn) btn.textContent=activeUserName?`${activeUserName}님`:"CODE";
+   closeCodeModal();showToast(`${activeUserName?activeUserName+"님의 ":""}개인 보유 데이터가 불러와졌습니다.`);render();
  }).catch(err=>codeState(err.message||"코드를 확인해주세요.",true));
 }
 function queueSaveOwnership(id,value){
@@ -234,7 +249,7 @@ function postOwnership(code,id,value){
 }
 function ensureSaveFrame(){if(document.getElementById("aipriSaveFrame"))return;const f=document.createElement("iframe");f.name="aipriSaveFrame";f.id="aipriSaveFrame";f.style.display="none";document.body.appendChild(f)}
 function logoutCode(){
- activeCode="";codeMode=false;clearOwnership();showToast("개인 코드 연결을 종료했습니다. 현재 기기에서는 임시 보유 상태로 사용할 수 있어요.");render();
+ activeCode="";activeUserName="";codeMode=false;const btn=document.getElementById("codeButton");if(btn)btn.textContent="CODE";clearOwnership();showToast("개인 코드 연결을 종료했습니다. 현재 기기에서는 임시 보유 상태로 사용할 수 있어요.");render();
 }
 
 window.addEventListener("popstate",()=>{const r=routeSection(); if(r) setSection(r); else goHome();});
