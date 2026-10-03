@@ -5,7 +5,7 @@
 <a class="brand" href="#" onclick="goHome();return false" aria-label="아이프리 아카이브 홈">
 <img class="brandLogo" src="https://cdnaipriimg01.blob.core.windows.net/aipri/mypage/assets/common/images/ic_aipri_v2.svg" alt="아이프리 로고">
 <span><b>AIPRI</b><small>ARCHIVE</small></span></a>
-<nav><button id="partsNav" onclick="setSection('parts')">MY CHARACTER PARTS</button><button id="songsNav" onclick="setSection('songs')">SONGS</button></nav><div class="topActions"><button id="codeButton" class="codeButton" onclick="openCodeModal()" aria-label="개인 코드 입력">CODE</button><button class="mobileFilter" onclick="toggleFilters()">필터</button></div></header>
+<nav><button id="partsNav" onclick="setSection('parts')">MY CHARACTER PARTS</button><button id="songsNav" onclick="setSection('songs')">SONGS</button></nav><div class="topActions"><button id="codeButton" class="codeButton" onclick="openCodeModal()" aria-label="개인 코드 입력">CODE</button><button id="logoutButton" class="logoutButton hidden" onclick="logoutCode()">로그아웃</button><button class="mobileFilter" onclick="toggleFilters()">필터</button></div></header>
 
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
@@ -22,14 +22,14 @@
 <div id="partCats"></div>
 </div>
 <div id="songFilters" class="hidden"><p>SONG CATEGORY</p><button class="chip songCat active" data-cat="전체">전체</button><button class="chip songCat" data-cat="1인곡">1인곡</button><button class="chip songCat" data-cat="2인곡">2인곡</button><button class="chip songCat" data-cat="3인곡">3인곡</button><button class="chip songCat" data-cat="4인곡">4인곡</button></div></aside>
-<section class="content"><div class="toolbar"><span id="result"></span><select id="sort"><option value="default">기본순</option><option value="name">이름순</option><option value="category">카테고리순</option></select></div>
+<section class="content"><div class="toolbar"><span id="result"></span></div>
 <div id="partStatusFilters" class="statusFilters hidden" aria-label="파츠 상태 필터">
+<button id="quickSelectButton" class="quickSelectButton" type="button" onclick="toggleQuickSelect()">» 빠른 선택 «</button>
 <button class="statusFilter active" data-status="all">전체</button>
 <button class="statusFilter" data-status="owned">보유</button>
 <button class="statusFilter" data-status="unowned">미보유</button>
 <button class="statusFilter" data-status="krReleased">한국 실장</button>
 <button class="statusFilter" data-status="krUnreleased">한국 미실장</button>
-<button id="quickSelectButton" class="quickSelectButton" type="button" onclick="toggleQuickSelect()">» 빠른 선택 «</button>
 </div>
 <h2 id="sectionHeading"></h2><div id="grid" class="grid"></div><div id="empty" class="empty hidden">✦<h3>찾는 자료가 없어요</h3><p>검색어나 필터를 바꿔보세요.</p></div></section></div></section>
 </main>
