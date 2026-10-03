@@ -192,7 +192,21 @@ function convertSheetRows(name,rows){
   if(name===CONFIG.songsSheetName){
     return rows.map(v=>({id:String(v[0]??"").trim(),category:String(v[1]??"").trim(),name:String(v[2]??"").trim(),image:parseImageValue(v[3]),description:String(v[4]??"").trim(),tags:cleanTags(v[5])}));
   }
-  return rows.map(v=>({id:String(v[0]??"").trim(),category:String(v[1]??"").trim(),name:String(v[2]??"").trim(),image:parseImageValue(v[3]),krImage:parseImageValue(v[3]),jpImage:parseImageValue(v[4]),description:String(v[5]??"").trim(),tags:cleanTags(v[6]),owned:false,krReleased:parseBool(v[8],false)}));
+  return rows.map(v=>{
+    const tags=cleanTags(v[6]);
+    return {
+      id:String(v[0]??"").trim(),
+      category:normalizeCategory(v[1]),
+      name:String(v[2]??"").trim(),
+      image:parseImageValue(v[3]),
+      krImage:parseImageValue(v[3]),
+      jpImage:parseImageValue(v[4]),
+      description:String(v[5]??"").trim(),
+      tags:tags.filter(t=>t!=="한국 실장"&&t!=="한국 미실장"),
+      owned:false,
+      krReleased:parseKoreaReleased(v[8],tags)
+    };
+  });
 }
 
 let saveTimer=null;
