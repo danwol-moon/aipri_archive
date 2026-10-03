@@ -19,7 +19,7 @@ let activeCode="";
 let activeUserName="";
 let codeMode=false;
 let quickSelect=false;
-const s={section:"parts",cat:"전체",status:"all",search:"",sort:"default",categoriesOpen:true,data:{parts:[],songs:[]}};
+const s={section:"parts",cat:"전체",status:"all",search:"",categoriesOpen:true,data:{parts:[],songs:[]}};
 try{ownedMap=JSON.parse(sessionStorage.getItem(OWNED_KEY)||"{}")}catch(e){ownedMap={}};
 
 function getOwned(i){return Object.prototype.hasOwnProperty.call(ownedMap,i.id)?!!ownedMap[i.id]:false}
@@ -33,7 +33,6 @@ document.querySelectorAll(".partCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.
 document.querySelectorAll(".statusFilter").forEach(b=>b.onclick=()=>{s.status=b.dataset.status;act(".statusFilter",b);render()});
 document.querySelectorAll(".songCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".songCat",b);render()});
 document.getElementById("search").oninput=e=>{s.search=e.target.value.toLowerCase();render()};
-document.getElementById("sort").onchange=e=>{s.sort=e.target.value;render()};
 
 function act(sel,x){document.querySelectorAll(sel).forEach(b=>b.classList.toggle("active",b===x))}
 function routeSection(){
@@ -67,7 +66,7 @@ function statusMatch(i){
  if(s.status==="krUnreleased")return !i.krReleased;
  return true;
 }
-function items(){let a=[...s.data[s.section]].filter(i=>(s.cat==="전체"||i.category===s.cat)&&statusMatch(i)&&(!s.search||[i.name,i.category,i.description,...(i.tags||[])].join(" ").toLowerCase().includes(s.search)));if(s.sort==="name")a.sort((x,y)=>x.name.localeCompare(y.name,"ko"));if(s.sort==="category")a.sort((x,y)=>x.category.localeCompare(y.category,"ko"));return a}
+function items(){return [...s.data[s.section]].filter(i=>(s.cat==="전체"||i.category===s.cat)&&statusMatch(i)&&(!s.search||[i.name,i.category,i.description,...(i.tags||[])].join(" ").toLowerCase().includes(s.search)))}
 function placeholder(i){let a=s.section==="songs"?["#f4b9d2","#a9c9e9"]:["#f5c7d9","#9fc9e9"];return"data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600"><defs><linearGradient id="g"><stop stop-color="${a[0]}"/><stop offset="1" stop-color="${a[1]}"/></linearGradient></defs><rect width="600" height="600" fill="url(#g)"/><circle cx="300" cy="250" r="120" fill="white" opacity=".35"/><text x="300" y="450" text-anchor="middle" font-family="Arial" font-size="28" fill="white">${i.category}</text><text x="300" y="490" text-anchor="middle" font-family="Arial" font-size="20" fill="white">${i.name}</text></svg>`)}
 function status(i){if(s.section!=="parts")return"";let owned=getOwned(i);return `<span class="status ${owned?"owned":"unowned"}">${owned?"✓ 보유":"미보유"}</span><span class="status ${i.krReleased?"krreleased":"unreleased"}">${i.krReleased?"한국 실장":"한국 미실장"}</span>`}
 function ownershipControl(i){if(s.section!=="parts")return"";let owned=getOwned(i);return `<label class="ownedCheck" onclick="event.stopPropagation()"><input type="checkbox" ${owned?"checked":""} onchange="toggleOwned('${esc(i.id)}',this.checked)"><span>보유</span></label>`}
@@ -149,8 +148,8 @@ function parseImageValue(value){
 }
 function parseBool(value, defaultValue=false){
  const v=String(value??"").trim().toLowerCase();
- if(["true","1","yes","y","보유","실장","한국 실장"].includes(v))return true;
- if(["false","0","no","n","미보유","미실장","한국 미실장"].includes(v))return false;
+ if(["true","1","yes","y","보유","실장","한국 실장","TRUE"].includes(v))return true;
+ if(["false","0","no","n","미보유","미실장","한국 미실장","FALSE"].includes(v))return false;
  return defaultValue;
 }
 function loadSheet(name){
@@ -233,7 +232,7 @@ function submitCode(){
  loadUserOwnership(code).then(data=>{
    activeCode=code;activeUserName=String(data.name||"").trim();codeMode=true;applyOwnershipMap(data.owned||{});
    const btn=document.getElementById("codeButton");
-   if(btn) btn.textContent=activeUserName?`${activeUserName}님`:"CODE";
+   if(btn) btn.textContent=activeUserName?`${activeUserName}님`:"CODE"; const logout=document.getElementById("logoutButton"); if(logout) logout.classList.toggle("hidden",!activeUserName);
    closeCodeModal();showToast(`${activeUserName?activeUserName+"님의 ":""}개인 보유 데이터가 불러와졌습니다.`);render();
  }).catch(err=>codeState(err.message||"코드를 확인해주세요.",true));
 }
@@ -249,7 +248,7 @@ function postOwnership(code,id,value){
 }
 function ensureSaveFrame(){if(document.getElementById("aipriSaveFrame"))return;const f=document.createElement("iframe");f.name="aipriSaveFrame";f.id="aipriSaveFrame";f.style.display="none";document.body.appendChild(f)}
 function logoutCode(){
- activeCode="";activeUserName="";codeMode=false;const btn=document.getElementById("codeButton");if(btn)btn.textContent="CODE";clearOwnership();showToast("개인 코드 연결을 종료했습니다. 현재 기기에서는 임시 보유 상태로 사용할 수 있어요.");render();
+ activeCode="";activeUserName="";codeMode=false;const btn=document.getElementById("codeButton");if(btn)btn.textContent="CODE";const logout=document.getElementById("logoutButton");if(logout)logout.classList.add("hidden");clearOwnership();showToast("개인 코드 연결을 종료했습니다. 현재 기기에서는 임시 보유 상태로 사용할 수 있어요.");render();
 }
 
 window.addEventListener("popstate",()=>{const r=routeSection(); if(r) setSection(r); else goHome();});
