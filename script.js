@@ -141,30 +141,42 @@ function parseBool(value, defaultValue=false){
  return defaultValue;
 }
 function loadSheet(name){
+  // Apps Script를 우선 사용해 Google Sheets의 최신 값을 직접 읽습니다.
+  // 실패하면 기존 GViz 방식으로 한 번 더 시도합니다.
   return new Promise((resolve,reject)=>{
-    const callbackName=`__aipriSheet_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script=document.createElement("script");
-    const timeout=setTimeout(()=>{cleanup();reject(new Error(`Google Sheets 응답 시간 초과: ${name}`));},15000);
-    function cleanup(){clearTimeout(timeout);try{delete window[callbackName]}catch(e){}if(script.parentNode)script.parentNode.removeChild(script)}
-    window[callbackName]=(j)=>{
-      cleanup();
-      try{
-        if(!j||!j.table)throw new Error("Google Sheets 데이터 형식이 올바르지 않습니다.");
-        const rows=(j.table.rows||[]).map(row=>(row.c||[]).map(c=>c?(c.v??""):""));
-        resolve(convertSheetRows(name,rows));
-      }catch(e){reject(e)}
-    };
-    script.onerror=()=>{cleanup();reject(new Error(`Google Sheets를 불러오지 못했습니다: ${name}`))};
-    const params=new URLSearchParams({tqx:`responseHandler:${callbackName}`,sheet:name,headers:"1"});
-    script.src=`https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?${params.toString()}&t=${Date.now()}`;
-    document.head.appendChild(script);
+    if(apiReady()){
+      const cb=`__aipriSheetApi_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const sc=document.createElement("script");
+      const timer=setTimeout(()=>{cleanup();loadSheetGviz(name).then(resolve).catch(reject)},10000);
+      function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){}if(sc.parentNode)sc.parentNode.removeChild(sc)}
+      window[cb]=(data)=>{cleanup();if(data&&data.ok&&Array.isArray(data.rows))resolve(convertSheetRows(name,data.rows));else loadSheetGviz(name).then(resolve).catch(reject)};
+      sc.onerror=()=>{cleanup();loadSheetGviz(name).then(resolve).catch(reject)};
+      const url=new URL(CONFIG.apiUrl);url.searchParams.set("action","sheet");url.searchParams.set("sheet",name);url.searchParams.set("callback",cb);url.searchParams.set("t",Date.now());
+      sc.src=url.toString();document.head.appendChild(sc);
+      return;
+    }
+    loadSheetGviz(name).then(resolve).catch(reject);
   });
+}
+function loadSheetGviz(name){
+ return new Promise((resolve,reject)=>{
+  const callbackName=`__aipriSheet_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const script=document.createElement("script");
+  const timeout=setTimeout(()=>{cleanup();reject(new Error(`Google Sheets 응답 시간 초과: ${name}`));},15000);
+  function cleanup(){clearTimeout(timeout);try{delete window[callbackName]}catch(e){}if(script.parentNode)script.parentNode.removeChild(script)}
+  window[callbackName]=(j)=>{cleanup();try{if(!j||!j.table)throw new Error("Google Sheets 데이터 형식이 올바르지 않습니다.");const rows=(j.table.rows||[]).map(row=>(row.c||[]).map(c=>c?(c.v??""):""));resolve(convertSheetRows(name,rows))}catch(e){reject(e)}};
+  script.onerror=()=>{cleanup();reject(new Error(`Google Sheets를 불러오지 못했습니다: ${name}`))};
+  const params=new URLSearchParams({tqx:`responseHandler:${callbackName}`,sheet:name,headers:"1",t:Date.now()});
+  script.src=`https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?${params.toString()}`;document.head.appendChild(script);
+ });
 }
 function convertSheetRows(name,rows){
   if(!rows.length)return [];
-  const first=rows[0].map(v=>String(v).trim().toLowerCase());
+  rows=rows.map(v=>Array.isArray(v)?v:[]);
+  const first=rows[0].map(v=>String(v??"").trim().toLowerCase());
   if(first.some(v=>["id","카테고리","category","이름","name"].includes(v)))rows.shift();
-  rows=rows.filter(v=>validId(v[0])); // A열 ID가 없는 행은 완전히 무시합니다.
+  // A열(ID)이 비어 있는 행은 어떤 내용이 남아 있어도 사이트에 표시하지 않습니다.
+  rows=rows.filter(v=>validId(v[0]));
   if(name===CONFIG.songsSheetName){
     return rows.map(v=>({id:String(v[0]??"").trim(),category:String(v[1]??"").trim(),name:String(v[2]??"").trim(),image:parseImageValue(v[3]),description:String(v[4]??"").trim(),tags:cleanTags(v[5])}));
   }

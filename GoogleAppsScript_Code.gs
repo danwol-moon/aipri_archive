@@ -231,13 +231,28 @@ const OWNERSHIP_SHEET_NAME = '보유데이터';
 
 function doGet(e) {
   const p = e && e.parameter ? e.parameter : {};
-  if (p.action !== 'load') return jsonp_({ok:true, message:'AIPRI archive API is running.'}, p.callback);
+  const action = String(p.action || '').trim();
+  if (action === 'sheet') {
+    const sheetName = String(p.sheet || '').trim();
+    const rows = readSheetRows_(sheetName);
+    return jsonp_({ok:true, sheet:sheetName, rows}, p.callback);
+  }
+  if (action !== 'load') return jsonp_({ok:true, message:'AIPRI archive API is running.'}, p.callback);
   const code = String(p.code || '').trim();
   const user = findUser_(code);
   if (!user) return jsonp_({ok:false, message:'등록되지 않은 개인 코드입니다.'}, p.callback);
   if (!user.enabled) return jsonp_({ok:false, message:'사용이 중지된 개인 코드입니다.'}, p.callback);
   const owned = readOwnership_(code);
   return jsonp_({ok:true, name:user.name, owned}, p.callback);
+}
+
+function readSheetRows_(sheetName) {
+  const allowed = ['파츠','악곡'];
+  if (!allowed.includes(sheetName)) return [];
+  const sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  if (!sh || sh.getLastRow() < 1) return [];
+  const values = sh.getDataRange().getDisplayValues();
+  return values.map(row => row.map(v => String(v ?? '').trim()));
 }
 
 function doPost(e) {
