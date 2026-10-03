@@ -5,7 +5,7 @@
 <a class="brand" href="#" onclick="goHome();return false" aria-label="아이프리 아카이브 홈">
 <img class="brandLogo" src="https://cdnaipriimg01.blob.core.windows.net/aipri/mypage/assets/common/images/ic_aipri_v2.svg" alt="아이프리 로고">
 <span><b>AIPRI</b><small>ARCHIVE</small></span></a>
-<nav><button id="partsNav" onclick="setSection('parts')">MY CHARACTER PARTS</button><button id="songsNav" onclick="setSection('songs')">SONGS</button></nav><button class="mobileFilter" onclick="toggleFilters()">필터</button></header>
+<nav><button id="partsNav" onclick="setSection('parts')">MY CHARACTER PARTS</button><button id="songsNav" onclick="setSection('songs')">SONGS</button></nav><div class="topActions"><button class="codeButton" onclick="openCodeModal()" aria-label="개인 코드 입력">CODE</button><button class="mobileFilter" onclick="toggleFilters()">필터</button></div></header>
 
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
@@ -40,6 +40,8 @@
 <div class="sourceRow"><span>일본 파츠/악곡 이미지:</span><a href="https://aipri.jp/verse/parts/index2.html" target="_blank" rel="noopener">https://aipri.jp/verse/parts/index2.html</a></div>
 <div class="sourceRow"><span></span><a href="https://aipri.jp/verse/parts/" target="_blank" rel="noopener">https://aipri.jp/verse/parts/</a></div>
 </div></footer>
+
+<div id="codeModal" class="modal hidden" onclick="closeCodeModal()"><div class="codeCard" onclick="event.stopPropagation()"><button class="codeClose" onclick="closeCodeModal()">×</button><p class="eyebrow">PERSONAL COLLECTION</p><h2>CODE</h2><p class="codeHint">개인 코드를 입력하면 해당 코드의 보유 파츠를 불러오고, 변경 사항을 저장할 수 있어요.</p><label class="codeInputWrap"><span>개인 코드</span><input id="codeInput" type="text" autocomplete="off" placeholder="예: 호박이_0222" onkeydown="if(event.key==='Enter')submitCode()"></label><div class="codeActions"><button class="codeCancel" onclick="closeCodeModal()">취소</button><button class="codeSubmit" onclick="submitCode()">확인</button></div><div id="codeState" class="codeState"></div></div></div>
 
 <div id="modal" class="modal hidden" onclick="closeModal()"><div class="modalCard" onclick="event.stopPropagation()"><button onclick="closeModal()">×</button><div id="modalGallery" class="modalGallery"></div><div class="modalInfo"><small id="modalCat"></small><h2 id="modalTitle"></h2><p id="modalDesc"></p><div id="modalStatus"></div><div id="modalTags"></div><div id="modalActions"></div></div></div></div>
 <script src="../script.js"></script></body></html>
