@@ -380,9 +380,9 @@ function readSheetRows_(sheetName) {
       try {
         out[3] = normalizeSongImage_(out[3]);
       } catch (err) {
-        // 이미지 하나가 실패해도 전체 악곡 목록은 내려갑니다.
-        // 실패 원인은 원래 Drive URL을 유지합니다.
-        console.warn('악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message);
+        // 변환 실패를 조용히 삼키지 않고 오류를 다시 발생시켜
+        // Apps Script 실행 기록에서 원인을 확인할 수 있게 합니다.
+        throw new Error('악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message);
       }
     }
 
