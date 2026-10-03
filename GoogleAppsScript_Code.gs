@@ -5,7 +5,7 @@
  * A ID / B 카테고리 / C 이름 / D 한국 이미지 / E 일본 이미지 / F 보유 / G 한국 실장
  *
  * 악곡:
- * A ID / B 카테고리 / C 이름 / D 이미지 / E 설명 / F 태그
+ * A ID / B 카테고리 / C 이름 / D 이미지
  *
  * 악곡 D열에는 Google Drive 파일 링크를 넣어도 됩니다.
  * Apps Script가 Drive 이미지를 GitHub 저장소로 복사한 뒤
@@ -374,19 +374,19 @@ function readSheetRows_(sheetName) {
   return values.map((row, index) => {
     const out = row.map(v => String(v ?? '').trim());
 
-    // 악곡 D열(4번째 열)이 Drive 이미지라면 GitHub로 자동 복사합니다.
-    // 헤더 행은 건너뜁니다.
+    // 악곡은 A~D 4개 열만 사용합니다.
+    // D열의 Drive 이미지 링크는 GitHub 이미지 URL로 자동 변환합니다.
     if (sheetName === '악곡' && index > 0 && out[0]) {
       try {
         out[3] = normalizeSongImage_(out[3]);
       } catch (err) {
-        // 이미지 하나가 실패해도 전체 악곡 목록은 내려가도록 합니다.
-        // 실패 원인은 원래 Drive URL을 유지하여 디버깅하기 쉽게 합니다.
+        // 이미지 하나가 실패해도 전체 악곡 목록은 내려갑니다.
+        // 실패 원인은 원래 Drive URL을 유지합니다.
         console.warn('악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message);
       }
     }
 
-    return out;
+    return out.slice(0, 4);
   });
 }
 
