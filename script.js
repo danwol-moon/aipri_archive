@@ -4,7 +4,7 @@ const CONFIG={
   partsSheetName:"파츠",
   songsSheetName:"악곡",
   // Google Apps Script 웹 앱 배포 후 /exec URL을 여기에 넣으세요.
-  apiUrl:"https://script.google.com/macros/s/AKfycbxrI3jhXKkjMzVyGlCVy7o10-1F5QWIERiWdXbToeRP8lpjovbhayyjm25lkh0lUR8v/exec"
+  apiUrl:"https://script.google.com/macros/s/AKfycbzr9dZbz1CF_g1Dy6UdEjlW00nDo1j599-X02XA-_i9QPYvYCTRYrB6RNdLbw_Zch6D/exec"
 };
 const CATS=["얼굴 타입","보이스","스킨 컬러","앞머리","뒷머리","헤어 컬러","아이 컬러","매쉬 타입","매쉬 컬러","헤어 데코","메이크업","원 포인트","브레스","팩트"];
 const DATA={parts:CATS.map((category,i)=>({id:"P"+String(i+1).padStart(3,"0"),category,name:["오토메","이키이키","스킨 컬러 샘플","드리밍 뱅","키ュ티 트윈","문 블루","프리티 마린","그라데","라벤더","스타 데코","문라이트 메이크업","오버핏 안경","미오 모델","프린세스 팩트"][i],image:"",krImage:"",jpImage:"",description:"샘플 데이터입니다. 실제 파츠 정보로 바꿔주세요.",tags:[category],owned:i%3!==1,krReleased:i!==7&&i!==12})),songs:[
@@ -18,6 +18,7 @@ let ownedMap={};
 let activeCode="";
 let codeMode=false;
 let quickSelect=false;
+const s={section:"parts",cat:"전체",status:"all",search:"",sort:"default",categoriesOpen:true,data:{parts:[],songs:[]}};
 try{ownedMap=JSON.parse(sessionStorage.getItem(OWNED_KEY)||"{}")}catch(e){ownedMap={}};
 
 function getOwned(i){return Object.prototype.hasOwnProperty.call(ownedMap,i.id)?!!ownedMap[i.id]:false}
