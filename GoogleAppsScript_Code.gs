@@ -8,13 +8,11 @@
  * C 이름
  * D 한국 이미지
  * E 일본 이미지
- * F 설명
- * G 태그
- * H 보유
- * I 한국실장
+ * F 보유
+ * G 한국 실장
  *
  * ID를 A열에 입력하면 B/C/E가 자동으로 채워집니다.
- * H/I는 새 파츠의 기본값 FALSE로 넣습니다.
+ * F/G는 체크박스로 관리하며, 새 파츠는 기본값 FALSE로 둡니다.
  * D(한국 이미지)는 한국 공식 사이트의 실제 이미지 URL 규칙이 확인되지 않아
  * 기존 값이 있으면 유지하고, 비어 있으면 빈칸으로 둡니다.
  * 사이트에서는 D가 있으면 D를 우선 사용하고, 없으면 E를 사용합니다.
@@ -85,8 +83,8 @@ function fillPartRow_(sheet, row, id, meta) {
     sheet.getRange(row, 3).clearContent(); // C 이름
     sheet.getRange(row, 4).clearContent(); // D 한국 이미지
     sheet.getRange(row, 5).clearContent(); // E 일본 이미지
-    sheet.getRange(row, 8).clearContent(); // H 보유
-    sheet.getRange(row, 9).clearContent(); // I 한국실장
+    sheet.getRange(row, 6).clearContent(); // F 보유
+    sheet.getRange(row, 7).clearContent(); // G 한국 실장
     return;
   }
 
@@ -98,8 +96,8 @@ function fillPartRow_(sheet, row, id, meta) {
     if (!sheet.getRange(row, 5).getValue()) {
       sheet.getRange(row, 5).setValue(AIPRI_CONFIG.JP_IMAGE_BASE + id + '.webp');
     }
-    if (sheet.getRange(row, 8).getValue() === '') sheet.getRange(row, 8).setValue(false);
-    if (sheet.getRange(row, 9).getValue() === '') sheet.getRange(row, 9).setValue(false);
+    if (sheet.getRange(row, 6).getValue() === '') sheet.getRange(row, 6).setValue(false);
+    if (sheet.getRange(row, 7).getValue() === '') sheet.getRange(row, 7).setValue(false);
     return;
   }
 
@@ -116,8 +114,8 @@ function fillPartRow_(sheet, row, id, meta) {
   sheet.getRange(row, 5).setValue(item.jpImage || (AIPRI_CONFIG.JP_IMAGE_BASE + id + '.webp'));
 
   // 보유 / 한국실장은 사용자가 직접 관리할 값이므로 기존 값이 있으면 유지합니다.
-  if (sheet.getRange(row, 8).getValue() === '') sheet.getRange(row, 8).setValue(false);
-  if (sheet.getRange(row, 9).getValue() === '') sheet.getRange(row, 9).setValue(false);
+  if (sheet.getRange(row, 6).getValue() === '') sheet.getRange(row, 6).setValue(false);
+  if (sheet.getRange(row, 7).getValue() === '') sheet.getRange(row, 7).setValue(false);
 }
 
 /**
