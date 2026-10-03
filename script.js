@@ -211,8 +211,8 @@ function convertSheetRows(name,rows){
       category:String(v[1]??"").trim(),
       name:String(v[2]??"").trim(),
       image:parseImageValue(v[3]),
-      description:String(v[4]??"").trim(),
-      tags:cleanTags(v[5])
+      description:"",
+      tags:[]
     }));
   }
   // 파츠 시트의 실제 구조:
