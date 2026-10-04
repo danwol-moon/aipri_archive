@@ -22,8 +22,35 @@ let quickSelect=false;
 const s={section:"parts",cat:"전체",status:"all",search:"",categoriesOpen:true,data:{parts:[],songs:[]}};
 try{ownedMap=JSON.parse(sessionStorage.getItem(OWNED_KEY)||"{}")}catch(e){ownedMap={}};
 
-function getOwned(i){return Object.prototype.hasOwnProperty.call(ownedMap,i.id)?!!ownedMap[i.id]:false}
-function setOwned(i,value){ownedMap[i.id]=!!value;try{sessionStorage.setItem(OWNED_KEY,JSON.stringify(ownedMap))}catch(e){};i.owned=!!value; if(codeMode) queueSaveOwnership(i.id,!!value)}
+function isHairMeshPart(i){
+ return i && ["헤어 컬러","매쉬 컬러"].includes(normalizeCategory(i.category));
+}
+function ownershipKey(i){
+ if(isHairMeshPart(i)) return "hairmesh:" + String(i.name||"").trim().toLowerCase();
+ return "id:" + String(i.id||"").trim();
+}
+function getOwned(i){
+ const direct=Object.prototype.hasOwnProperty.call(ownedMap,i.id)?!!ownedMap[i.id]:false;
+ if(direct)return true;
+ if(isHairMeshPart(i)){
+   const key=ownershipKey(i);
+   if(Object.prototype.hasOwnProperty.call(ownedMap,key))return !!ownedMap[key];
+   return s.data.parts.some(x=>isHairMeshPart(x)&&ownershipKey(x)===key&&Object.prototype.hasOwnProperty.call(ownedMap,x.id)&&!!ownedMap[x.id]);
+ }
+ return false;
+}
+function setOwned(i,value){
+ const related=isHairMeshPart(i)
+   ? s.data.parts.filter(x=>isHairMeshPart(x)&&ownershipKey(x)===ownershipKey(i))
+   : [i];
+ related.forEach(x=>{
+   ownedMap[x.id]=!!value;
+   x.owned=!!value;
+   if(codeMode) queueSaveOwnership(x.id,!!value);
+ });
+ if(isHairMeshPart(i)) ownedMap[ownershipKey(i)]=!!value;
+ try{sessionStorage.setItem(OWNED_KEY,JSON.stringify(ownedMap))}catch(e){}
+}
 function apiReady(){return CONFIG.apiUrl&&/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(CONFIG.apiUrl)}
 
 const partCats=document.getElementById("partCats");
@@ -116,7 +143,7 @@ function ensureQuickSelectButton(){
  const b=document.createElement("button"); b.id="quickSelectButton"; b.className="quickSelectButton"; b.type="button"; b.textContent="» 빠른 선택 «"; b.onclick=toggleQuickSelect; b.title="파츠 이미지나 이름을 눌러 보유/미보유를 바로 전환합니다."; bar.appendChild(b);
 }
 
-function render(){let a=items(),g=document.getElementById("grid");g.innerHTML="";document.getElementById("count").textContent=a.length;document.getElementById("result").textContent=s.section==="parts"?`${s.cat==="전체"?"전체 파츠":s.cat} · ${a.length}개`:`${s.cat} · ${a.length}곡`;document.getElementById("sectionHeading").textContent=s.section==="parts"?(s.cat==="전체"?"전체 파츠":s.cat):(s.cat==="전체"?"전체 악곡":s.cat);document.getElementById("empty").classList.toggle("hidden",a.length>0);a.forEach(i=>{let c=document.createElement("article");c.className="card";const isOwned=s.section==="parts"&&getOwned(i);c.innerHTML=`<div class="cardImg ${isOwned?"owned-bg":"unowned-bg"}"><img src="${esc(imageUrlForPart(i)||placeholder(i))}" alt="${esc(i.name)}"><div class="cardBody"><div class="cardCat">${esc(i.category)}</div><div class="cardTitle">${esc(i.name)}</div><div class="statusRow">${status(i)}</div><div>${cleanTags(i.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${ownershipControl(i)}</div>`;c.onclick=()=>{if(s.section==="parts"&&quickSelect) toggleOwned(i.id,!getOwned(i)); else openModal(i)};g.appendChild(c)})}
+function render(){let a=items(),g=document.getElementById("grid");g.innerHTML="";document.getElementById("count").textContent=a.length;document.getElementById("result").textContent=s.section==="parts"?`${s.cat==="전체"?"전체 파츠":s.cat} · ${a.length}개`:`${s.cat} · ${a.length}곡`;document.getElementById("sectionHeading").textContent=s.section==="parts"?(s.cat==="전체"?"전체 파츠":s.cat):(s.cat==="전체"?"전체 악곡":s.cat);document.getElementById("empty").classList.toggle("hidden",a.length>0);a.forEach(i=>{let c=document.createElement("article");c.className="card";const isOwned=s.section==="parts"&&getOwned(i);c.innerHTML=`<div class="cardImg ${isOwned?"owned-bg":"unowned-bg"}"><img src="${esc(imageUrlForPart(i)||placeholder(i))}" alt="${esc(i.name)}"></div><div class="cardBody"><div class="cardCat">${esc(i.category)}</div><div class="cardTitle">${esc(i.name)}</div><div class="statusRow">${status(i)}</div><div>${cleanTags(i.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${ownershipControl(i)}</div>`;c.onclick=()=>{if(s.section==="parts"&&quickSelect) toggleOwned(i.id,!getOwned(i)); else openModal(i)};g.appendChild(c)})}
 function openModal(i){
  const gallery=document.getElementById("modalGallery");
  if(s.section==="parts"){
@@ -279,7 +306,17 @@ function clearOwnership(){ownedMap={};try{sessionStorage.removeItem(OWNED_KEY)}c
 function applyOwnershipMap(map){
  ownedMap={};
  Object.keys(map||{}).forEach(id=>ownedMap[id]=!!map[id]);
- s.data.parts.forEach(i=>i.owned=!!ownedMap[i.id]);
+ const ownedHairMeshNames=new Set();
+ s.data.parts.forEach(i=>{
+   if(isHairMeshPart(i)&&ownedMap[i.id]) ownedHairMeshNames.add(ownershipKey(i));
+ });
+ s.data.parts.forEach(i=>{
+   if(isHairMeshPart(i)&&ownedHairMeshNames.has(ownershipKey(i))){
+     ownedMap[i.id]=true;
+     ownedMap[ownershipKey(i)]=true;
+   }
+   i.owned=getOwned(i);
+ });
  try{sessionStorage.setItem(OWNED_KEY,JSON.stringify(ownedMap))}catch(e){}
 }
 function loadUserOwnership(code){
