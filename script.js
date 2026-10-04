@@ -146,6 +146,14 @@ function parseImageValue(value){
  if(m)return m[1];
  return v;
 }
+function withSongCacheBust(value,id){
+ let v=String(value??"").trim();
+ if(!v||!id)return v;
+ if(/^https:\/\/danwol-moon\.github\.io\/aipri_archive\/images\/songs\//i.test(v)){
+   return v + (v.includes("?")?"&":"?") + "v=" + encodeURIComponent(id);
+ }
+ return v;
+}
 function parseBool(value, defaultValue=false){
  const v=String(value??"").trim().toLowerCase();
  if(["true","1","yes","y","보유","실장","한국 실장","TRUE"].includes(v))return true;
@@ -210,7 +218,7 @@ function convertSheetRows(name,rows){
       id:String(v[0]??"").trim(),
       category:String(v[1]??"").trim(),
       name:String(v[2]??"").trim(),
-      image:parseImageValue(v[3]),
+      image:withSongCacheBust(parseImageValue(v[3]), String(v[0]??"").trim()),
       description:"",
       tags:[]
     }));
