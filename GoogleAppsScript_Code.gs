@@ -386,7 +386,8 @@ function readSheetRows_(sheetName) {
       }
     }
 
-    return out.slice(0, 4);
+    // 악곡은 A~D, 파츠는 A~G 전체 열을 사이트에 전달합니다.
+    return sheetName === '악곡' ? out.slice(0, 4) : out.slice(0, 7);
   });
 }
 
