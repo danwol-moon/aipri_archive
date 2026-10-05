@@ -211,21 +211,50 @@ function parseBool(value, defaultValue=false){
  return defaultValue;
 }
 function loadSheet(name){
-  // Apps Script를 우선 사용해 Google Sheets의 최신 값을 직접 읽습니다.
-  // 실패하면 기존 GViz 방식으로 한 번 더 시도합니다.
   return new Promise((resolve,reject)=>{
-    if(apiReady()){
-      const cb=`__aipriSheetApi_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      const sc=document.createElement("script");
-      const timer=setTimeout(()=>{cleanup();loadSheetGviz(name).then(resolve).catch(reject)},10000);
-      function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(e){}if(sc.parentNode)sc.parentNode.removeChild(sc)}
-      window[cb]=(data)=>{cleanup();if(data&&data.ok&&Array.isArray(data.rows))resolve(convertSheetRows(name,data.rows));else loadSheetGviz(name).then(resolve).catch(reject)};
-      sc.onerror=()=>{cleanup();loadSheetGviz(name).then(resolve).catch(reject)};
-      const url=new URL(CONFIG.apiUrl);url.searchParams.set("action","sheet");url.searchParams.set("sheet",name);url.searchParams.set("callback",cb);url.searchParams.set("t",Date.now());
-      sc.src=url.toString();document.head.appendChild(sc);
-      return;
+    if(!apiReady()) return loadSheetGviz(name).then(resolve).catch(reject);
+
+    const cb=`__aipriSheetApi_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const sc=document.createElement("script");
+    const timer=setTimeout(()=>{
+      cleanup();
+      loadSheetGviz(name).then(resolve).catch(reject);
+    },10000);
+
+    function cleanup(){
+      clearTimeout(timer);
+      try{delete window[cb]}catch(e){}
+      if(sc.parentNode)sc.parentNode.removeChild(sc);
     }
-    loadSheetGviz(name).then(resolve).catch(reject);
+
+    window[cb]=(data)=>{
+      cleanup();
+      const returnedSheet=String(data?.sheet||"").trim();
+      if(!data || !data.ok || returnedSheet!==name || !Array.isArray(data.rows)){
+        loadSheetGviz(name).then(resolve).catch(reject);
+        return;
+      }
+      const rows=data.rows.map(v=>Array.isArray(v)?v:[]);
+      const maxCols=rows.reduce((m,v)=>Math.max(m,v.length),0);
+      if(name===CONFIG.songsSheetName && maxCols>4){
+        loadSheetGviz(name).then(resolve).catch(reject);
+        return;
+      }
+      resolve(convertSheetRows(name,rows));
+    };
+
+    sc.onerror=()=>{
+      cleanup();
+      loadSheetGviz(name).then(resolve).catch(reject);
+    };
+
+    const url=new URL(CONFIG.apiUrl);
+    url.searchParams.set("action","sheet");
+    url.searchParams.set("sheet",name);
+    url.searchParams.set("callback",cb);
+    url.searchParams.set("t",Date.now());
+    sc.src=url.toString();
+    document.head.appendChild(sc);
   });
 }
 function loadSheetGviz(name){
@@ -261,52 +290,51 @@ function isHairMeshColorCategory(value){
  return ["헤어 컬러","매쉬 컬러","헤어/매쉬 컬러"].includes(v);
 }
 function imageUrlForPart(i){
- const kr=parseImageValue(i.krImage);
- const jp=parseImageValue(i.jpImage);
- const fallback=parseImageValue(i.image);
- return kr||jp||fallback||"";
+  if(!i || i.dataType!=="part") return "";
+  const kr=parseImageValue(i.krImage);
+  const jp=parseImageValue(i.jpImage);
+  return kr||jp||"";
+}
+function imageUrlForSong(i){
+  if(!i || i.dataType!=="song") return "";
+  return parseImageValue(i.songImage);
 }
 function imageUrlForItem(i){
- // 파츠와 악곡은 이미지 필드를 절대 공유하지 않습니다.
- if(s.section==="songs") return String(i.songImage||"").trim();
- return imageUrlForPart(i);
+  return s.section==="songs" ? imageUrlForSong(i) : imageUrlForPart(i);
 }
 function parseKoreaReleased(value){
  const v=String(value??"").trim().toLowerCase();
  return ["true","1","yes","y","실장","한국 실장"].includes(v);
 }
 function convertSheetRows(name,rows){
-  if(!rows.length)return [];
+  if(!Array.isArray(rows)||!rows.length)return [];
   rows=rows.map(v=>Array.isArray(v)?v:[]);
   const first=rows[0].map(v=>String(v??"").trim().toLowerCase());
   if(first.some(v=>["id","카테고리","category","이름","name"].includes(v)))rows.shift();
-  // A열(ID)이 비어 있는 행은 어떤 내용이 남아 있어도 사이트에 표시하지 않습니다.
   rows=rows.filter(v=>validId(v[0]));
+
   if(name===CONFIG.songsSheetName){
     return rows.map(v=>({
+      dataType:"song",
       id:String(v[0]??"").trim(),
-      category:String(v[1]??"").trim(),
+      category:normalizeSongCategory(v[1]),
       name:String(v[2]??"").trim(),
-      image:"",
-      songImage:withSongCacheBust(parseImageValue(v[3]), String(v[0]??"").trim()),
+      songImage:withSongCacheBust(parseImageValue(v[3]),String(v[0]??"").trim()),
       description:"",
       tags:[]
     }));
   }
-  // 파츠 시트의 실제 구조:
-  // A ID / B 카테고리 / C 이름 / D 한국 이미지 / E 일본 이미지 / F 보유 / G 한국 실장
+
   return rows.map(v=>({
+    dataType:"part",
     id:String(v[0]??"").trim(),
     category:normalizeCategory(v[1]),
     name:String(v[2]??"").trim(),
-    image:parseImageValue(v[3]),
     krImage:parseImageValue(v[3]),
     jpImage:parseImageValue(v[4]),
     description:"",
     tags:[],
-    // F열 보유를 기본 보유 상태로 사용합니다.
     owned:parseBool(v[5],false),
-    // G열 한국 실장을 한국 실장/미실장 필터의 기준으로 사용합니다.
     krReleased:parseKoreaReleased(v[6])
   }));
 }
@@ -380,18 +408,20 @@ function logoutCode(){
 window.addEventListener("popstate",()=>{const r=routeSection(); if(r) setSection(r); else goHome();});
 
 async function init(){
- ensureQuickSelectButton();
- ensureSaveFrame();
- if(CONFIG.useGoogleSheet&&CONFIG.spreadsheetId){
-   try{
-     const [parts,songs]=await Promise.all([loadSheet(CONFIG.partsSheetName),loadSheet(CONFIG.songsSheetName)]);
-     s.data={parts,songs};
-   }catch(e){
-     console.warn(e);
-     showToast("구글 시트를 불러오지 못했습니다. 시트 공유 설정과 시트 이름을 확인해주세요.");
-   }
- }
- render();
+  ensureQuickSelectButton();
+  ensureSaveFrame();
+
+  if(CONFIG.useGoogleSheet&&CONFIG.spreadsheetId){
+    try{
+      const sheetName=s.section==="songs"?CONFIG.songsSheetName:CONFIG.partsSheetName;
+      const rows=await loadSheet(sheetName);
+      s.data=s.section==="songs" ? {parts:[],songs:rows} : {parts:rows,songs:[]};
+    }catch(e){
+      console.warn(e);
+      showToast("구글 시트를 불러오지 못했습니다. 시트 이름이나 Apps Script 배포 상태를 확인해주세요.");
+    }
+  }
+  render();
 }
 const initialRoute=routeSection();
 if(PAGE_SECTION==="songs"||PAGE_SECTION==="parts"){setSection(PAGE_SECTION);}else if(initialRoute){setSection(initialRoute);}else{goHome();}
