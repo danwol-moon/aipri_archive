@@ -78,11 +78,10 @@ function navigateRoute(route){
   const hash=next?"#"+next:"";
   const targetPath="/aipri_archive/";
   const currentRoute=routeSection()||"";
-  const hasRouteRefresh=String(new URLSearchParams(location.search).get("_route_refresh")||"")==="1";
 
-  // 해시만 변경하면 브라우저가 같은 문서를 재사용할 수 있으므로,
-  // 매번 일회성 쿼리를 붙여 실제 문서 탐색을 발생시킵니다.
-  if(location.pathname!==targetPath || currentRoute!==next || !hasRouteRefresh){
+  // 같은 섹션의 최초 진입은 그대로 초기화하고,
+  // 파츠↔악곡처럼 섹션이 바뀔 때만 일회성 쿼리로 실제 문서 탐색을 발생시킵니다.
+  if(location.pathname!==targetPath || currentRoute!==next){
     const params=new URLSearchParams(location.search);
     params.set("_route_refresh","1");
     const targetUrl=targetPath+"?"+params.toString()+hash;
