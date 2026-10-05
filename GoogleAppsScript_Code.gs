@@ -13,6 +13,7 @@
  */
 
 const AIPRI_CONFIG = {
+  SPREADSHEET_ID: '1SmwOlhhrLwNX96qV6PG7xRR-xCkoQA2Zux5spxjVQkY',
   SHEET_NAME: '파츠',
   HEADER_ROW: 1,
   ID_COL: 1,
@@ -375,7 +376,7 @@ function readSheetRows_(sheetName) {
   }
 
   const columnCount = SHEET_COLUMN_COUNT[sheetName];
-  const sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  const sh = SpreadsheetApp.openById(AIPRI_CONFIG.SPREADSHEET_ID).getSheetByName(sheetName);
   if (!sh || sh.getLastRow() < 1) return [];
 
   // getDataRange()로 다른 시트의 열이 섞이지 않도록
@@ -432,7 +433,7 @@ function doPost(e) {
 
 function findUser_(code) {
   if (!code) return null;
-  const sh = SpreadsheetApp.getActive().getSheetByName(USER_SHEET_NAME);
+  const sh = SpreadsheetApp.openById(AIPRI_CONFIG.SPREADSHEET_ID).getSheetByName(USER_SHEET_NAME);
   if (!sh || sh.getLastRow() < 2) return null;
 
   const rows = sh.getRange(2,1,sh.getLastRow()-1,3).getValues();
@@ -450,7 +451,7 @@ function findUser_(code) {
 }
 
 function readOwnership_(code) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(OWNERSHIP_SHEET_NAME);
+  const sh = SpreadsheetApp.openById(AIPRI_CONFIG.SPREADSHEET_ID).getSheetByName(OWNERSHIP_SHEET_NAME);
   const out = {};
   if (!sh || sh.getLastRow() < 2) return out;
 
@@ -469,7 +470,7 @@ function readOwnership_(code) {
 }
 
 function writeOwnership_(code, partId, owned) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(OWNERSHIP_SHEET_NAME);
+  const sh = SpreadsheetApp.openById(AIPRI_CONFIG.SPREADSHEET_ID).getSheetByName(OWNERSHIP_SHEET_NAME);
   if (!sh) throw new Error('보유데이터 시트가 없습니다.');
 
   const last = sh.getLastRow();
@@ -505,7 +506,7 @@ function jsonp_(obj, callback) {
 }
 
 function setupAipriUserSheets() {
-  const ss = SpreadsheetApp.getActive();
+  const ss = SpreadsheetApp.openById(AIPRI_CONFIG.SPREADSHEET_ID);
 
   let users = ss.getSheetByName(USER_SHEET_NAME);
   if (!users) users = ss.insertSheet(USER_SHEET_NAME);
