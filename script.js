@@ -241,6 +241,12 @@ function parseBool(value, defaultValue=false){
  return defaultValue;
 }
 function loadSheet(name){
+  // 악곡은 A~D만 필요하고 Drive 이미지는 브라우저에서 직접 thumbnail로 처리합니다.
+  // Apps Script의 한 개 이미지 변환 실패가 전체 악곡 목록을 막지 않도록
+  // 악곡 데이터는 Google Sheets(GViz)에서 직접 읽습니다.
+  if(name===CONFIG.songsSheetName){
+    return loadSheetGviz(name);
+  }
   return new Promise((resolve,reject)=>{
     if(!apiReady()) return loadSheetGviz(name).then(resolve).catch(reject);
 
