@@ -362,32 +362,46 @@ function doGet(e) {
   return jsonp_({ok:true, name:user.name, owned}, p.callback);
 }
 
-function readSheetRows_(sheetName) {
-  const allowed = ['파츠','악곡'];
-  if (!allowed.includes(sheetName)) return [];
+// 시트별 API 반환 열을 명시적으로 분리합니다.
+// 파츠: A~G / 악곡: A~D
+const SHEET_COLUMN_COUNT = {
+  '파츠': 7,
+  '악곡': 4,
+};
 
+function readSheetRows_(sheetName) {
+  if (!Object.prototype.hasOwnProperty.call(SHEET_COLUMN_COUNT, sheetName)) {
+    return [];
+  }
+
+  const columnCount = SHEET_COLUMN_COUNT[sheetName];
   const sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
   if (!sh || sh.getLastRow() < 1) return [];
 
-  const values = sh.getDataRange().getDisplayValues();
+  // getDataRange()로 다른 시트의 열이 섞이지 않도록
+  // 해당 시트에서 필요한 열까지만 정확히 읽습니다.
+  const rowCount = sh.getLastRow();
+  const values = sh.getRange(1, 1, rowCount, columnCount).getDisplayValues();
 
   return values.map((row, index) => {
-    const out = row.map(v => String(v ?? '').trim());
+    // API에서 반환하는 배열 길이를 시트별로 항상 고정합니다.
+    const out = Array.from({length: columnCount}, (_, i) =>
+      String(row[i] ?? '').trim()
+    );
 
-    // 악곡은 A~D 4개 열만 사용합니다.
-    // D열의 Drive 이미지 링크는 GitHub 이미지 URL로 자동 변환합니다.
+    // 악곡은 오직 D열만 이미지 처리합니다.
+    // 파츠의 D/E 이미지 URL에는 절대 손대지 않습니다.
     if (sheetName === '악곡' && index > 0 && out[0]) {
       try {
         out[3] = normalizeSongImage_(out[3]);
       } catch (err) {
-        // 변환 실패를 조용히 삼키지 않고 오류를 다시 발생시켜
-        // Apps Script 실행 기록에서 원인을 확인할 수 있게 합니다.
-        throw new Error('악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message);
+        throw new Error(
+          '악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message
+        );
       }
     }
 
-    // 악곡은 A~D, 파츠는 A~G 전체 열을 사이트에 전달합니다.
-    return sheetName === '악곡' ? out.slice(0, 4) : out.slice(0, 7);
+    return out;
   });
 }
 
