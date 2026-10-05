@@ -55,7 +55,7 @@ function setOwned(i,value){
 function apiReady(){return CONFIG.apiUrl&&/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(CONFIG.apiUrl)}
 
 const partCats=document.getElementById("partCats");
-partCats.innerHTML=`<button class="chip partCat allParts active" data-cat="전체">전체 파츠</button>`+CATS.map(x=>`<button class="chip partCat" data-cat="${esc(x)}">${esc(x)}</button>`).join("");
+if(partCats) partCats.innerHTML=`<button class="chip partCat allParts active" data-cat="전체">전체 파츠</button>`+CATS.map(x=>`<button class="chip partCat" data-cat="${esc(x)}">${esc(x)}</button>`).join("");
 
 document.querySelectorAll(".partCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".partCat",b);render()});
 document.querySelectorAll(".statusFilter").forEach(b=>b.onclick=()=>{s.status=b.dataset.status;act(".statusFilter",b);render()});
@@ -64,7 +64,8 @@ document.querySelectorAll(".songMobileCat").forEach(b=>b.onclick=()=>{s.cat=b.da
 function syncSongMobileCategory(){
  document.querySelectorAll(".songMobileCat").forEach(b=>b.classList.toggle("active",b.dataset.cat===s.cat));
 }
-document.getElementById("search").oninput=e=>{s.search=e.target.value.toLowerCase();render()};
+const searchInput=document.getElementById("search");
+if(searchInput) searchInput.oninput=e=>{s.search=e.target.value.toLowerCase();render()};
 
 function act(sel,x){document.querySelectorAll(sel).forEach(b=>b.classList.toggle("active",b===x))}
 function routeSection(){
@@ -79,7 +80,7 @@ function navigateRoute(route){
 }
 
 function goHome(){navigateRoute("home");document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
-function setSection(x){navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";document.getElementById("search").value="";document.getElementById("home").classList.add("hidden");document.getElementById("archive").classList.remove("hidden");document.getElementById("partFilters").classList.toggle("hidden",x!=="parts");document.getElementById("songFilters").classList.toggle("hidden",x!=="songs");document.getElementById("partStatusFilters").classList.toggle("hidden",x!=="parts");document.getElementById("partsNav").classList.toggle("active",x==="parts");document.getElementById("songsNav").classList.toggle("active",x==="songs");act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));act(".songMobileCat",null);document.getElementById("songCategoryBar").classList.toggle("hidden",x!=="songs");document.getElementById("heroEyebrow").textContent=x==="parts"?"MY CHARACTER":"MUSIC";document.getElementById("heroTitle").textContent=x==="parts"?"마이캐릭터 파츠":"악곡";document.getElementById("heroText").textContent=x==="parts"?"파츠의 이미지와 이름, 보유 여부를 확인할 수 있어요.":"1인곡부터 4인곡까지 이미지와 제목을 확인할 수 있어요.";document.getElementById("filters").classList.remove("open");render()}
+function setSection(x){navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";document.getElementById("search").value="";document.getElementById("home").classList.add("hidden");document.getElementById("archive").classList.remove("hidden");document.getElementById("partFilters").classList.toggle("hidden",x!=="parts");document.getElementById("songFilters").classList.toggle("hidden",x!=="songs");document.getElementById("partStatusFilters").classList.toggle("hidden",x!=="parts");document.getElementById("partsNav").classList.toggle("active",x==="parts");document.getElementById("songsNav").classList.toggle("active",x==="songs");act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));act(".songMobileCat",null);const songCategoryBar=document.getElementById("songCategoryBar");if(songCategoryBar)songCategoryBar.classList.toggle("hidden",x!=="songs");document.getElementById("heroEyebrow").textContent=x==="parts"?"MY CHARACTER":"MUSIC";document.getElementById("heroTitle").textContent=x==="parts"?"마이캐릭터 파츠":"악곡";document.getElementById("heroText").textContent=x==="parts"?"파츠의 이미지와 이름, 보유 여부를 확인할 수 있어요.":"1인곡부터 4인곡까지 이미지와 제목을 확인할 수 있어요.";document.getElementById("filters").classList.remove("open");render()}
 function toggleFilters(){document.getElementById("filters").classList.toggle("open")}
 function togglePartCategories(){s.categoriesOpen=!s.categoriesOpen;document.getElementById("partCats").classList.toggle("collapsed",!s.categoriesOpen);document.getElementById("categoryArrow").textContent=s.categoriesOpen?"⌃":"⌄";document.getElementById("partCategoryToggle").setAttribute("aria-expanded",String(s.categoriesOpen))}
 function resetFilters(){s.cat="전체";s.status="all";s.search="";document.getElementById("search").value="";act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));act(".songMobileCat",null);render()}
