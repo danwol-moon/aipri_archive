@@ -80,7 +80,23 @@ function navigateRoute(route){
 }
 
 function goHome(){navigateRoute("home");document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
-function setSection(x){navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";document.getElementById("search").value="";document.getElementById("home").classList.add("hidden");document.getElementById("archive").classList.remove("hidden");document.getElementById("partFilters").classList.toggle("hidden",x!=="parts");document.getElementById("songFilters").classList.toggle("hidden",x!=="songs");document.getElementById("partStatusFilters").classList.toggle("hidden",x!=="parts");document.getElementById("partsNav").classList.toggle("active",x==="parts");document.getElementById("songsNav").classList.toggle("active",x==="songs");act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));act(".songMobileCat",null);const songCategoryBar=document.getElementById("songCategoryBar");if(songCategoryBar)songCategoryBar.classList.toggle("hidden",x!=="songs");document.getElementById("heroEyebrow").textContent=x==="parts"?"MY CHARACTER":"MUSIC";document.getElementById("heroTitle").textContent=x==="parts"?"마이캐릭터 파츠":"악곡";document.getElementById("heroText").textContent=x==="parts"?"파츠의 이미지와 이름, 보유 여부를 확인할 수 있어요.":"1인곡부터 4인곡까지 이미지와 제목을 확인할 수 있어요.";document.getElementById("filters").classList.remove("open");render()}
+function setSection(x){
+ navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";
+ const search=document.getElementById("search");if(search)search.value="";
+ ["home","archive"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle("hidden",id==="home" ? x!=="home" : x==="home")});
+ const partFilters=document.getElementById("partFilters");if(partFilters)partFilters.classList.toggle("hidden",x!=="parts");
+ const songFilters=document.getElementById("songFilters");if(songFilters)songFilters.classList.toggle("hidden",x!=="songs");
+ const partStatus=document.getElementById("partStatusFilters");if(partStatus)partStatus.classList.toggle("hidden",x!=="parts");
+ const partsNav=document.getElementById("partsNav");if(partsNav)partsNav.classList.toggle("active",x==="parts");
+ const songsNav=document.getElementById("songsNav");if(songsNav)songsNav.classList.toggle("active",x==="songs");
+ act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));act(".songMobileCat",null);
+ const songCategoryBar=document.getElementById("songCategoryBar");if(songCategoryBar)songCategoryBar.classList.toggle("hidden",x!=="songs");
+ const heroEyebrow=document.getElementById("heroEyebrow");if(heroEyebrow)heroEyebrow.textContent=x==="parts"?"MY CHARACTER":"MUSIC";
+ const heroTitle=document.getElementById("heroTitle");if(heroTitle)heroTitle.textContent=x==="parts"?"마이캐릭터 파츠":"악곡";
+ const heroText=document.getElementById("heroText");if(heroText)heroText.textContent=x==="parts"?"파츠의 이미지와 이름, 보유 여부를 확인할 수 있어요.":"1인곡부터 4인곡까지 이미지와 제목을 확인할 수 있어요.";
+ const filters=document.getElementById("filters");if(filters)filters.classList.remove("open");
+ render();
+}
 function toggleFilters(){document.getElementById("filters").classList.toggle("open")}
 function togglePartCategories(){s.categoriesOpen=!s.categoriesOpen;document.getElementById("partCats").classList.toggle("collapsed",!s.categoriesOpen);document.getElementById("categoryArrow").textContent=s.categoriesOpen?"⌃":"⌄";document.getElementById("partCategoryToggle").setAttribute("aria-expanded",String(s.categoriesOpen))}
 function resetFilters(){s.cat="전체";s.status="all";s.search="";document.getElementById("search").value="";act(".partCat",null);act(".statusFilter",document.querySelector('.statusFilter[data-status="all"]'));act(".songCat",document.querySelector('.songCat[data-cat="전체"]'));act(".songMobileCat",null);render()}
