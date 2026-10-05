@@ -209,11 +209,19 @@ function toggleOwnedModal(id,value){
 }
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
 function esc(x){return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function normalizeImageUrl(value){
+ let v=String(value??"").trim();
+ if(!v)return "";
+ // GitHub Pages는 HTTPS로 서비스되므로 한국 아이프리 이미지의
+ // 오래된 HTTP 주소를 HTTPS로 통일해 Mixed Content 경고를 방지합니다.
+ v=v.replace(/^http:\/\/aipri\.co\.kr\//i,"https://aipri.co.kr/");
+ return v;
+}
 function parseImageValue(value){
  let v=String(value??"").trim();
  const m=v.match(/^=IMAGE\(\s*["']([^"']+)["']/i);
- if(m)return m[1];
- return v;
+ if(m)return normalizeImageUrl(m[1]);
+ return normalizeImageUrl(v);
 }
 function extractDriveIdInBrowser(value){
  let v=String(value??"").trim();
