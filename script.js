@@ -58,8 +58,11 @@ partCats.innerHTML=`<button class="chip partCat allParts active" data-cat="전�
 
 document.querySelectorAll(".partCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".partCat",b);render()});
 document.querySelectorAll(".statusFilter").forEach(b=>b.onclick=()=>{s.status=b.dataset.status;act(".statusFilter",b);render()});
-document.querySelectorAll(".songCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".songCat",b);act(".songMobileCat",document.querySelector(`.songMobileCat[data-cat="${CSS.escape(s.cat)}"]`));render()});
-document.querySelectorAll(".songMobileCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".songMobileCat",b);act(".songCat",document.querySelector(`.songCat[data-cat="${CSS.escape(s.cat)}"]`));render()});
+document.querySelectorAll(".songCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".songCat",b);syncSongMobileCategory();render()});
+document.querySelectorAll(".songMobileCat").forEach(b=>b.onclick=()=>{s.cat=b.dataset.cat;act(".songMobileCat",b);act(".songCat",Array.from(document.querySelectorAll(".songCat")).find(x=>x.dataset.cat===s.cat)||null);render()});
+function syncSongMobileCategory(){
+ document.querySelectorAll(".songMobileCat").forEach(b=>b.classList.toggle("active",b.dataset.cat===s.cat));
+}
 document.getElementById("search").oninput=e=>{s.search=e.target.value.toLowerCase();render()};
 
 function act(sel,x){document.querySelectorAll(sel).forEach(b=>b.classList.toggle("active",b===x))}
@@ -94,13 +97,20 @@ function statusMatch(i){
  if(s.status==="krUnreleased")return !i.krReleased;
  return true;
 }
+function normalizeSongCategory(value){
+ const v=String(value??"").trim();
+ const map={"1인":"1인곡","2인":"2인곡","3인":"3인곡","4인":"4인곡","솔로":"1인곡","듀엣":"2인곡","트리오":"3인곡"};
+ return map[v]||v;
+}
 function items(){
  return [...s.data[s.section]].filter(i=>{
+   const itemCategory=s.section==="songs"?normalizeSongCategory(i.category):i.category;
+   const selectedCategory=s.section==="songs"?normalizeSongCategory(s.cat):s.cat;
    const categoryMatch =
-     s.cat==="전체" ||
-     (["헤어 컬러","매쉬 컬러"].includes(s.cat) && isHairMeshColorCategory(i.category)) ||
-     i.category===s.cat;
-   return categoryMatch&&statusMatch(i)&&(!s.search||[i.name,i.category,i.description,...(i.tags||[])].join(" ").toLowerCase().includes(s.search));
+     selectedCategory==="전체" ||
+     (s.section==="parts" && ["헤어 컬러","매쉬 컬러"].includes(selectedCategory) && isHairMeshColorCategory(i.category)) ||
+     itemCategory===selectedCategory;
+   return categoryMatch&&statusMatch(i)&&(!s.search||[i.name,itemCategory,i.description,...(i.tags||[])].join(" ").toLowerCase().includes(s.search));
  });
 }
 function placeholder(i){let a=s.section==="songs"?["#f4b9d2","#a9c9e9"]:["#f5c7d9","#9fc9e9"];return"data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600"><defs><linearGradient id="g"><stop stop-color="${a[0]}"/><stop offset="1" stop-color="${a[1]}"/></linearGradient></defs><rect width="600" height="600" fill="url(#g)"/><circle cx="300" cy="250" r="120" fill="white" opacity=".35"/><text x="300" y="450" text-anchor="middle" font-family="Arial" font-size="28" fill="white">${i.category}</text><text x="300" y="490" text-anchor="middle" font-family="Arial" font-size="20" fill="white">${i.name}</text></svg>`)}
@@ -144,7 +154,7 @@ function ensureQuickSelectButton(){
  const b=document.createElement("button"); b.id="quickSelectButton"; b.className="quickSelectButton"; b.type="button"; b.textContent="» 빠른 선택 «"; b.onclick=toggleQuickSelect; b.title="파츠 이미지나 이름을 눌러 보유/미보유를 바로 전환합니다."; bar.appendChild(b);
 }
 
-function render(){let a=items(),g=document.getElementById("grid");g.innerHTML="";document.getElementById("count").textContent=a.length;document.getElementById("result").textContent=s.section==="parts"?`${s.cat==="전체"?"전체 파츠":s.cat} · ${a.length}개`:`${s.cat} · ${a.length}곡`;document.getElementById("sectionHeading").textContent=s.section==="parts"?(s.cat==="전체"?"전체 파츠":s.cat):(s.cat==="전체"?"전체 악곡":s.cat);document.getElementById("empty").classList.toggle("hidden",a.length>0);a.forEach(i=>{let c=document.createElement("article");c.className="card";const isOwned=s.section==="parts"&&getOwned(i);const imageSrc=imageUrlForPart(i)||placeholder(i);c.innerHTML=`<div class="cardImg ${isOwned?"owned-bg":"unowned-bg"}"><img src="${esc(imageSrc)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></div><div class="cardBody"><div class="cardCat">${esc(i.category)}</div><div class="cardTitle">${esc(i.name)}</div><div class="statusRow">${status(i)}</div><div>${cleanTags(i.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${ownershipControl(i)}</div>`;const cardImg=c.querySelector(".cardImg img");if(cardImg&&imageSrc&&!imageSrc.startsWith("data:")){cardImg.addEventListener("error",()=>{if(cardImg.dataset.retried!=="1"){cardImg.dataset.retried="1";cardImg.src=imageSrc+(imageSrc.includes("?")?"&":"?")+"retry="+Date.now()}else{cardImg.src=placeholder(i)}},{once:false});}c.onclick=()=>{if(s.section==="parts"&&quickSelect) toggleOwned(i.id,!getOwned(i)); else openModal(i)};g.appendChild(c)})}
+function render(){let a=items(),g=document.getElementById("grid");g.innerHTML="";document.getElementById("count").textContent=a.length;document.getElementById("result").textContent=s.section==="parts"?`${s.cat==="전체"?"전체 파츠":s.cat} · ${a.length}개`:`${s.cat} · ${a.length}곡`;document.getElementById("sectionHeading").textContent=s.section==="parts"?(s.cat==="전체"?"전체 파츠":s.cat):(s.cat==="전체"?"전체 악곡":s.cat);document.getElementById("empty").classList.toggle("hidden",a.length>0);a.forEach(i=>{let c=document.createElement("article");c.className="card";const isOwned=s.section==="parts"&&getOwned(i);const imageSrc=imageUrlForItem(i)||placeholder(i);c.innerHTML=`<div class="cardImg ${isOwned?"owned-bg":"unowned-bg"}"><img src="${esc(imageSrc)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></div><div class="cardBody"><div class="cardCat">${esc(i.category)}</div><div class="cardTitle">${esc(i.name)}</div><div class="statusRow">${status(i)}</div><div>${cleanTags(i.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${ownershipControl(i)}</div>`;const cardImg=c.querySelector(".cardImg img");if(cardImg&&imageSrc&&!imageSrc.startsWith("data:")){cardImg.addEventListener("error",()=>{if(cardImg.dataset.retried!=="1"){cardImg.dataset.retried="1";cardImg.src=imageSrc+(imageSrc.includes("?")?"&":"?")+"retry="+Date.now()}else{cardImg.src=placeholder(i)}},{once:false});}c.onclick=()=>{if(s.section==="parts"&&quickSelect) toggleOwned(i.id,!getOwned(i)); else openModal(i)};g.appendChild(c)})}
 function openModal(i){
  const gallery=document.getElementById("modalGallery");
  if(s.section==="parts"){
@@ -156,7 +166,7 @@ function openModal(i){
    if(!images.length)images.push({label:"이미지",src:placeholder(i)});
    gallery.innerHTML=images.map(x=>`<div class="modalImagePane"><div class="modalImageLabel">${esc(x.label)}</div><img src="${esc(x.src)}" alt="${esc(i.name)} ${esc(x.label)}"></div>`).join("");
  }else{
-   gallery.innerHTML=`<div class="modalImagePane single"><div class="modalImageLabel">악곡 이미지</div><img src="${esc(i.image||placeholder(i))}" alt="${esc(i.name)}"></div>`;
+   gallery.innerHTML=`<div class="modalImagePane single"><div class="modalImageLabel">악곡 이미지</div><img src="${esc(imageUrlForItem(i)||placeholder(i))}" alt="${esc(i.name)}"></div>`;
  }
  document.getElementById("modalCat").textContent=i.category;
  document.getElementById("modalTitle").textContent=i.name;
@@ -252,8 +262,12 @@ function imageUrlForPart(i){
  const kr=parseImageValue(i.krImage);
  const jp=parseImageValue(i.jpImage);
  const fallback=parseImageValue(i.image);
- // 한국 이미지가 비어 있거나 IMAGE 수식만 남은 경우에도 일본 이미지를 우선적으로 사용할 수 있게 합니다.
  return kr||jp||fallback||"";
+}
+function imageUrlForItem(i){
+ // 파츠와 악곡은 이미지 필드를 절대 공유하지 않습니다.
+ if(s.section==="songs") return withSongCacheBust(parseImageValue(i.image),String(i.id||"").trim());
+ return imageUrlForPart(i);
 }
 function parseKoreaReleased(value){
  const v=String(value??"").trim().toLowerCase();
