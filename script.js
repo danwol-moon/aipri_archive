@@ -198,8 +198,21 @@ function parseImageValue(value){
  if(m)return m[1];
  return v;
 }
-function withSongCacheBust(value,id){
+function extractDriveIdInBrowser(value){
  let v=String(value??"").trim();
+ let m=v.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+ if(m)return m[1];
+ m=v.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+ return m?m[1]:"";
+}
+function normalizeSongBrowserImage(value){
+ const v=String(value??"").trim();
+ const id=extractDriveIdInBrowser(v);
+ if(id)return "https://drive.google.com/thumbnail?id="+encodeURIComponent(id)+"&sz=w1600";
+ return v;
+}
+function withSongCacheBust(value,id){
+ let v=normalizeSongBrowserImage(value);
  if(!v||!id)return v;
  const sep=v.includes("?")?"&":"?";
  return v + sep + "aipri_song=" + encodeURIComponent(id);
