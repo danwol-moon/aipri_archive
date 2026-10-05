@@ -392,12 +392,14 @@ function readSheetRows_(sheetName) {
     // 악곡은 오직 D열만 이미지 처리합니다.
     // 파츠의 D/E 이미지 URL에는 절대 손대지 않습니다.
     if (sheetName === '악곡' && index > 0 && out[0]) {
+      // 한 곡의 Drive 이미지에 문제가 있어도 악곡 전체가 실패하지 않도록 합니다.
+      // 변환에 실패하면 원래 D열 값을 그대로 반환하고,
+      // 브라우저에서 Drive thumbnail 방식으로 표시할 수 있게 합니다.
       try {
         out[3] = normalizeSongImage_(out[3]);
       } catch (err) {
-        throw new Error(
-          '악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message
-        );
+        console.warn('악곡 이미지 변환 실패: ' + out[0] + ' / ' + err.message);
+        // out[3]은 원래 Drive 링크 그대로 유지
       }
     }
 
