@@ -19,7 +19,8 @@ let activeCode="";
 let activeUserName="";
 let codeMode=false;
 let quickSelect=false;
-const s={section:"parts",cat:"전체",status:"all",search:"",categoriesOpen:true,data:{parts:[],songs:[]}};
+const PAGE_SECTION=(document.body?.dataset?.section==="songs"||location.pathname.includes("/aipri_archive_songs/"))?"songs":"parts";
+const s={section:PAGE_SECTION,cat:"전체",status:"all",search:"",categoriesOpen:true,data:{parts:[],songs:[]}};
 try{ownedMap=JSON.parse(sessionStorage.getItem(OWNED_KEY)||"{}")}catch(e){ownedMap={}};
 
 function isHairMeshPart(i){
@@ -98,9 +99,12 @@ function statusMatch(i){
  return true;
 }
 function normalizeSongCategory(value){
- const v=String(value??"").trim();
- const map={"1인":"1인곡","2인":"2인곡","3인":"3인곡","4인":"4인곡","솔로":"1인곡","듀엣":"2인곡","트리오":"3인곡"};
- return map[v]||v;
+ const v=String(value??"").trim().replace(/\s+/g," ");
+ if(!v)return "";
+ const m=v.match(/([1-4])\s*인/);
+ if(m)return m[1]+"인곡";
+ const map={"솔로":"1인곡","솔로곡":"1인곡","single":"1인곡","solo":"1인곡","듀엣":"2인곡","듀엣곡":"2인곡","duet":"2인곡","트리오":"3인곡","트리오곡":"3인곡","trio":"3인곡","quartet":"4인곡","콰르텟":"4인곡","콰르텟곡":"4인곡"};
+ return map[v.toLowerCase()]||v;
 }
 function items(){
  return [...s.data[s.section]].filter(i=>{
@@ -154,7 +158,7 @@ function ensureQuickSelectButton(){
  const b=document.createElement("button"); b.id="quickSelectButton"; b.className="quickSelectButton"; b.type="button"; b.textContent="» 빠른 선택 «"; b.onclick=toggleQuickSelect; b.title="파츠 이미지나 이름을 눌러 보유/미보유를 바로 전환합니다."; bar.appendChild(b);
 }
 
-function render(){let a=items(),g=document.getElementById("grid");g.innerHTML="";document.getElementById("count").textContent=a.length;document.getElementById("result").textContent=s.section==="parts"?`${s.cat==="전체"?"전체 파츠":s.cat} · ${a.length}개`:`${s.cat} · ${a.length}곡`;document.getElementById("sectionHeading").textContent=s.section==="parts"?(s.cat==="전체"?"전체 파츠":s.cat):(s.cat==="전체"?"전체 악곡":s.cat);document.getElementById("empty").classList.toggle("hidden",a.length>0);a.forEach(i=>{let c=document.createElement("article");c.className="card";const isOwned=s.section==="parts"&&getOwned(i);const imageSrc=imageUrlForItem(i)||placeholder(i);c.innerHTML=`<div class="cardImg ${isOwned?"owned-bg":"unowned-bg"}"><img src="${esc(imageSrc)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></div><div class="cardBody"><div class="cardCat">${esc(i.category)}</div><div class="cardTitle">${esc(i.name)}</div><div class="statusRow">${status(i)}</div><div>${cleanTags(i.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${ownershipControl(i)}</div>`;const cardImg=c.querySelector(".cardImg img");if(cardImg&&imageSrc&&!imageSrc.startsWith("data:")){cardImg.addEventListener("error",()=>{if(cardImg.dataset.retried!=="1"){cardImg.dataset.retried="1";cardImg.src=imageSrc+(imageSrc.includes("?")?"&":"?")+"retry="+Date.now()}else{cardImg.src=placeholder(i)}},{once:false});}c.onclick=()=>{if(s.section==="parts"&&quickSelect) toggleOwned(i.id,!getOwned(i)); else openModal(i)};g.appendChild(c)})}
+function render(){let a=items(),g=document.getElementById("grid");g.innerHTML="";document.getElementById("count").textContent=a.length;document.getElementById("result").textContent=s.section==="parts"?`${s.cat==="전체"?"전체 파츠":s.cat} · ${a.length}개`:`${s.cat} · ${a.length}곡`;document.getElementById("sectionHeading").textContent=s.section==="parts"?(s.cat==="전체"?"전체 파츠":s.cat):(s.cat==="전체"?"전체 악곡":s.cat);document.getElementById("empty").classList.toggle("hidden",a.length>0);a.forEach(i=>{let c=document.createElement("article");c.className="card";const isOwned=s.section==="parts"&&getOwned(i);const imageSrc=imageUrlForItem(i)||placeholder(i);const displayCategory=s.section==="songs"?normalizeSongCategory(i.category):i.category;c.innerHTML=`<div class="cardImg ${isOwned?"owned-bg":"unowned-bg"}"><img src="${esc(imageSrc)}" alt="${esc(i.name)}" loading="lazy" decoding="async"></div><div class="cardBody"><div class="cardCat">${esc(displayCategory)}</div><div class="cardTitle">${esc(i.name)}</div><div class="statusRow">${status(i)}</div><div>${cleanTags(i.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${ownershipControl(i)}</div>`;const cardImg=c.querySelector(".cardImg img");if(cardImg&&imageSrc&&!imageSrc.startsWith("data:")){cardImg.addEventListener("error",()=>{if(cardImg.dataset.retried!=="1"){cardImg.dataset.retried="1";cardImg.src=imageSrc+(imageSrc.includes("?")?"&":"?")+"retry="+Date.now()}else{cardImg.src=placeholder(i)}},{once:false});}c.onclick=()=>{if(s.section==="parts"&&quickSelect) toggleOwned(i.id,!getOwned(i)); else openModal(i)};g.appendChild(c)})}
 function openModal(i){
  const gallery=document.getElementById("modalGallery");
  if(s.section==="parts"){
@@ -168,7 +172,7 @@ function openModal(i){
  }else{
    gallery.innerHTML=`<div class="modalImagePane single"><div class="modalImageLabel">악곡 이미지</div><img src="${esc(imageUrlForItem(i)||placeholder(i))}" alt="${esc(i.name)}"></div>`;
  }
- document.getElementById("modalCat").textContent=i.category;
+ document.getElementById("modalCat").textContent=s.section==="songs"?normalizeSongCategory(i.category):i.category;
  document.getElementById("modalTitle").textContent=i.name;
  document.getElementById("modalDesc").textContent=i.description||"";
  document.getElementById("modalStatus").innerHTML=status(i);
@@ -197,10 +201,8 @@ function parseImageValue(value){
 function withSongCacheBust(value,id){
  let v=String(value??"").trim();
  if(!v||!id)return v;
- if(/^https:\/\/danwol-moon\.github\.io\/aipri_archive\/images\/songs\//i.test(v)){
-   return v + (v.includes("?")?"&":"?") + "v=" + encodeURIComponent(id);
- }
- return v;
+ const sep=v.includes("?")?"&":"?";
+ return v + sep + "aipri_song=" + encodeURIComponent(id);
 }
 function parseBool(value, defaultValue=false){
  const v=String(value??"").trim().toLowerCase();
@@ -266,7 +268,7 @@ function imageUrlForPart(i){
 }
 function imageUrlForItem(i){
  // 파츠와 악곡은 이미지 필드를 절대 공유하지 않습니다.
- if(s.section==="songs") return withSongCacheBust(parseImageValue(i.image),String(i.id||"").trim());
+ if(s.section==="songs") return String(i.songImage||"").trim();
  return imageUrlForPart(i);
 }
 function parseKoreaReleased(value){
@@ -285,7 +287,8 @@ function convertSheetRows(name,rows){
       id:String(v[0]??"").trim(),
       category:String(v[1]??"").trim(),
       name:String(v[2]??"").trim(),
-      image:withSongCacheBust(parseImageValue(v[3]), String(v[0]??"").trim()),
+      image:"",
+      songImage:withSongCacheBust(parseImageValue(v[3]), String(v[0]??"").trim()),
       description:"",
       tags:[]
     }));
@@ -391,5 +394,5 @@ async function init(){
  render();
 }
 const initialRoute=routeSection();
-if(initialRoute){setSection(initialRoute);}else{goHome();}
+if(PAGE_SECTION==="songs"||PAGE_SECTION==="parts"){setSection(PAGE_SECTION);}else if(initialRoute){setSection(initialRoute);}else{goHome();}
 init();
