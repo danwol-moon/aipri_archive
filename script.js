@@ -263,7 +263,17 @@ function loadSheetGviz(name){
   const script=document.createElement("script");
   const timeout=setTimeout(()=>{cleanup();reject(new Error(`Google Sheets 응답 시간 초과: ${name}`));},15000);
   function cleanup(){clearTimeout(timeout);try{delete window[callbackName]}catch(e){}if(script.parentNode)script.parentNode.removeChild(script)}
-  window[callbackName]=(j)=>{cleanup();try{if(!j||!j.table)throw new Error("Google Sheets 데이터 형식이 올바르지 않습니다.");const rows=(j.table.rows||[]).map(row=>(row.c||[]).map(c=>c?(c.v??""):""));resolve(convertSheetRows(name,rows))}catch(e){reject(e)}};
+  window[callbackName]=(j)=>{
+    cleanup();
+    try{
+      if(!j||!j.table)throw new Error("Google Sheets 데이터 형식이 올바르지 않습니다.");
+      const rows=(j.table.rows||[]).map(row=>(row.c||[]).map(c=>c?(c.v??""):""));
+      const maxCols=rows.reduce((m,v)=>Math.max(m,v.length),0);
+      // 악곡은 반드시 A~D 구조입니다. 5열 이상이면 파츠 데이터가 잘못 들어온 것으로 간주합니다.
+      if(name===CONFIG.songsSheetName && maxCols>4) throw new Error("악곡 시트 구조가 아닙니다.");
+      resolve(convertSheetRows(name,rows));
+    }catch(e){reject(e)}
+  };
   script.onerror=()=>{cleanup();reject(new Error(`Google Sheets를 불러오지 못했습니다: ${name}`))};
   const params=new URLSearchParams({tqx:`responseHandler:${callbackName}`,sheet:name,headers:"1",t:Date.now()});
   script.src=`https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?${params.toString()}`;document.head.appendChild(script);
