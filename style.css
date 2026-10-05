@@ -19,4 +19,4 @@ main{max-width:1400px;margin:auto;padding:34px 5vw 45px}.eyebrow{font-size:10px;
 .songMobileCat.active{background:#f7e9f0;color:#cf4d83;font-weight:700}
 @media(max-width:760px){.songCategoryBar{display:flex}.songCategoryBar.hidden{display:none!important}.topActions{margin-left:8px}.topbar nav{margin-left:auto}.topbar{justify-content:flex-start}.brand{margin-right:8px}.brandLogo{width:36px;height:36px}.topbar nav button{padding:7px 8px}.codeButton{padding:8px 10px}.logoutButton{padding:7px 8px}.grid img{content-visibility:auto}}
 
-@media(max-width:760px){.songCategoryBar{display:grid!important;grid-template-columns:repeat(4,1fr);visibility:visible!important;opacity:1!important}.songCategoryBar.hidden{display:grid!important}.songMobileCat{min-height:40px;font-size:12px}}
+@media(max-width:760px){body[data-section="songs"] .songCategoryBar{display:grid!important;grid-template-columns:repeat(4,1fr);visibility:visible!important;opacity:1!important}body[data-section="parts"] .songCategoryBar{display:none!important}.songMobileCat{min-height:40px;font-size:12px}}
