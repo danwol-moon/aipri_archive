@@ -75,11 +75,20 @@ function routeSection(){
 }
 function navigateRoute(route){
   const next=route==="parts"||route==="songs"?route:"";
-  const hash=next?`#${next}`:"";
-  if(location.hash!==hash){ history.pushState({section:next||"home"},"",location.pathname+location.search+hash); }
+  const hash=next?"#"+next:"";
+  const targetPath="/aipri_archive/";
+  const targetUrl=targetPath+location.search+hash;
+
+  // 파츠/악곡 전환은 실제 페이지 새로고침으로 처리합니다.
+  // 페이지 진입부터 Google Sheets와 이미지가 다시 로드됩니다.
+  if(location.pathname!==targetPath || location.hash!==hash){
+    window.location.assign(targetUrl);
+    return false;
+  }
+  return true;
 }
 
-function goHome(){navigateRoute("home");document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
+function goHome(){if(!navigateRoute("home")) return;document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
 let sectionLoadToken=0;
 const sectionLoaded={parts:false,songs:false};
 
@@ -103,7 +112,8 @@ async function loadSectionData(section,token){
 }
 
 async function setSection(x){
- navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";
+ if(!navigateRoute(x)) return;
+ s.section=x;s.cat="전체";s.status="all";s.search="";
  const token=++sectionLoadToken;
  const search=document.getElementById("search");if(search)search.value="";
  ["home","archive"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle("hidden",id==="home" ? x!=="home" : x==="home")});
@@ -473,6 +483,7 @@ function logoutCode(){
 }
 
 window.addEventListener("popstate",()=>{const r=routeSection(); if(r) setSection(r); else goHome();});
+window.addEventListener("hashchange",()=>{const r=routeSection(); if(r) setSection(r); else goHome();});
 
 async function init(){
   ensureQuickSelectButton();
