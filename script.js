@@ -80,8 +80,31 @@ function navigateRoute(route){
 }
 
 function goHome(){navigateRoute("home");document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
-function setSection(x){
+let sectionLoadToken=0;
+const sectionLoaded={parts:false,songs:false};
+
+async function loadSectionData(section,token){
+ if(!["parts","songs"].includes(section)) return;
+ if(sectionLoaded[section]){render();return;}
+ if(!CONFIG.useGoogleSheet||!CONFIG.spreadsheetId){render();return;}
+ const sheetName=section==="songs"?CONFIG.songsSheetName:CONFIG.partsSheetName;
+ try{
+   const rows=await loadSheet(sheetName);
+   if(token!==sectionLoadToken||s.section!==section)return;
+   s.data=section==="songs"?{parts:[],songs:rows}:{parts:rows,songs:[]};
+   sectionLoaded[section]=true;
+   render();
+ }catch(e){
+   if(token!==sectionLoadToken||s.section!==section)return;
+   console.warn(e);
+   showToast("구글 시트를 불러오지 못했습니다. 시트 이름이나 Apps Script 배포 상태를 확인해주세요.");
+   render();
+ }
+}
+
+async function setSection(x){
  navigateRoute(x);s.section=x;s.cat="전체";s.status="all";s.search="";
+ const token=++sectionLoadToken;
  const search=document.getElementById("search");if(search)search.value="";
  ["home","archive"].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle("hidden",id==="home" ? x!=="home" : x==="home")});
  const partFilters=document.getElementById("partFilters");if(partFilters)partFilters.classList.toggle("hidden",x!=="parts");
@@ -96,6 +119,7 @@ function setSection(x){
  const heroText=document.getElementById("heroText");if(heroText)heroText.textContent=x==="parts"?"파츠의 이미지와 이름, 보유 여부를 확인할 수 있어요.":"1인곡부터 4인곡까지 이미지와 제목을 확인할 수 있어요.";
  const filters=document.getElementById("filters");if(filters)filters.classList.remove("open");
  render();
+ await loadSectionData(x,token);
 }
 function toggleFilters(){document.getElementById("filters").classList.toggle("open")}
 function togglePartCategories(){s.categoriesOpen=!s.categoriesOpen;document.getElementById("partCats").classList.toggle("collapsed",!s.categoriesOpen);document.getElementById("categoryArrow").textContent=s.categoriesOpen?"⌃":"⌄";document.getElementById("partCategoryToggle").setAttribute("aria-expanded",String(s.categoriesOpen))}
@@ -464,18 +488,6 @@ async function init(){
     return;
   }
 
-  setSection(s.section);
-
-  if(CONFIG.useGoogleSheet&&CONFIG.spreadsheetId){
-    try{
-      const sheetName=s.section==="songs"?CONFIG.songsSheetName:CONFIG.partsSheetName;
-      const rows=await loadSheet(sheetName);
-      s.data=s.section==="songs" ? {parts:[],songs:rows} : {parts:rows,songs:[]};
-    }catch(e){
-      console.warn(e);
-      showToast("구글 시트를 불러오지 못했습니다. 시트 이름이나 Apps Script 배포 상태를 확인해주세요.");
-    }
-  }
-  render();
+  await setSection(s.section);
 }
 init();
