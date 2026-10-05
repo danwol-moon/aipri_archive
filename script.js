@@ -77,15 +77,28 @@ function navigateRoute(route){
   const next=route==="parts"||route==="songs"?route:"";
   const hash=next?"#"+next:"";
   const targetPath="/aipri_archive/";
-  const targetUrl=targetPath+location.search+hash;
+  const currentRoute=routeSection()||"";
+  const hasRouteRefresh=String(new URLSearchParams(location.search).get("_route_refresh")||"")==="1";
 
-  // 파츠/악곡 전환은 실제 페이지 새로고침으로 처리합니다.
-  // 페이지 진입부터 Google Sheets와 이미지가 다시 로드됩니다.
-  if(location.pathname!==targetPath || location.hash!==hash){
+  // 해시만 변경하면 브라우저가 같은 문서를 재사용할 수 있으므로,
+  // 매번 일회성 쿼리를 붙여 실제 문서 탐색을 발생시킵니다.
+  if(location.pathname!==targetPath || currentRoute!==next || !hasRouteRefresh){
+    const params=new URLSearchParams(location.search);
+    params.set("_route_refresh","1");
+    const targetUrl=targetPath+"?"+params.toString()+hash;
     window.location.assign(targetUrl);
     return false;
   }
   return true;
+}
+
+function cleanRouteRefreshParam(){
+  const params=new URLSearchParams(location.search);
+  if(!params.has("_route_refresh")) return;
+  params.delete("_route_refresh");
+  const query=params.toString();
+  const cleanUrl=location.pathname+(query?"?"+query:"")+location.hash;
+  history.replaceState(history.state,"",cleanUrl);
 }
 
 function goHome(){if(!navigateRoute("home")) return;document.getElementById("home").classList.remove("hidden");document.getElementById("archive").classList.add("hidden");document.querySelectorAll(".topbar nav button").forEach(b=>b.classList.remove("active"))}
@@ -488,6 +501,7 @@ window.addEventListener("hashchange",()=>{const r=routeSection(); if(r) setSecti
 async function init(){
   ensureQuickSelectButton();
   ensureSaveFrame();
+  cleanRouteRefreshParam();
 
   const initialRoute=routeSection();
   if(PAGE_SECTION==="songs"||PAGE_SECTION==="parts") s.section=PAGE_SECTION;
