@@ -271,11 +271,6 @@ function loadSheet(name){
         return;
       }
       const rows=data.rows.map(v=>Array.isArray(v)?v:[]);
-      const maxCols=rows.reduce((m,v)=>Math.max(m,v.length),0);
-      if(name===CONFIG.songsSheetName && maxCols>4){
-        loadSheetGviz(name).then(resolve).catch(reject);
-        return;
-      }
       resolve(convertSheetRows(name,name===CONFIG.songsSheetName?rows.map(v=>v.slice(0,4)):rows));
     };
 
@@ -304,9 +299,6 @@ function loadSheetGviz(name){
     try{
       if(!j||!j.table)throw new Error("Google Sheets 데이터 형식이 올바르지 않습니다.");
       const rows=(j.table.rows||[]).map(row=>(row.c||[]).map(c=>c?(c.v??""):""));
-      const maxCols=rows.reduce((m,v)=>Math.max(m,v.length),0);
-      // 악곡은 반드시 A~D 구조입니다. 5열 이상이면 파츠 데이터가 잘못 들어온 것으로 간주합니다.
-      if(name===CONFIG.songsSheetName && maxCols>4) throw new Error("악곡 시트 구조가 아닙니다.");
       resolve(convertSheetRows(name,name===CONFIG.songsSheetName?rows.map(v=>v.slice(0,4)):rows));
     }catch(e){reject(e)}
   };
