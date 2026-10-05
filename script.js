@@ -19,8 +19,8 @@ let activeCode="";
 let activeUserName="";
 let codeMode=false;
 let quickSelect=false;
-const PAGE_SECTION=(document.body?.dataset?.section==="songs"||location.pathname.includes("/aipri_archive_songs/"))?"songs":"parts";
-const s={section:PAGE_SECTION,cat:"전체",status:"all",search:"",categoriesOpen:true,data:{parts:[],songs:[]}};
+const PAGE_SECTION=(document.body?.dataset?.section==="songs"||location.pathname.includes("/aipri_archive_songs/"))?"songs":(document.body?.dataset?.section==="parts"||location.pathname.includes("/aipri_archive_parts/"))?"parts":"";
+const s={section:PAGE_SECTION||"home",cat:"전체",status:"all",search:"",categoriesOpen:true,data:{parts:[],songs:[]}};
 try{ownedMap=JSON.parse(sessionStorage.getItem(OWNED_KEY)||"{}")}catch(e){ownedMap={}};
 
 function isHairMeshPart(i){
@@ -446,6 +446,18 @@ async function init(){
   ensureQuickSelectButton();
   ensureSaveFrame();
 
+  const initialRoute=routeSection();
+  if(PAGE_SECTION==="songs"||PAGE_SECTION==="parts") s.section=PAGE_SECTION;
+  else if(initialRoute) s.section=initialRoute;
+  else s.section="home";
+
+  if(s.section==="home"){
+    goHome();
+    return;
+  }
+
+  setSection(s.section);
+
   if(CONFIG.useGoogleSheet&&CONFIG.spreadsheetId){
     try{
       const sheetName=s.section==="songs"?CONFIG.songsSheetName:CONFIG.partsSheetName;
@@ -458,6 +470,4 @@ async function init(){
   }
   render();
 }
-const initialRoute=routeSection();
-if(PAGE_SECTION==="songs"||PAGE_SECTION==="parts"){setSection(PAGE_SECTION);}else if(initialRoute){setSection(initialRoute);}else{goHome();}
 init();
